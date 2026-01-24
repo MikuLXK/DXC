@@ -1,0 +1,110 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>DanMachi: Familia Myth</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Anton&family=Fjalla+One&family=Roboto+Condensed:ital,wght@0,400;0,700;1,700&family=Noto+Serif+SC:wght@400;700&display=swap" rel="stylesheet">
+    <style>
+      body {
+        font-family: 'Roboto Condensed', sans-serif;
+        background-color: #000;
+        overflow-x: hidden;
+      }
+      .font-display {
+        font-family: 'Fjalla One', 'Anton', sans-serif;
+      }
+      .font-serif {
+        font-family: 'Noto Serif SC', serif;
+      }
+      /* Custom Scrollbar */
+      ::-webkit-scrollbar {
+        width: 10px;
+      }
+      ::-webkit-scrollbar-track {
+        background: #000; 
+      }
+      ::-webkit-scrollbar-thumb {
+        background: #2563eb; 
+        border: 2px solid #000;
+      }
+      
+      /* P5 Textures */
+      .bg-halftone {
+        background-image: radial-gradient(#333 1px, transparent 1px);
+        background-size: 10px 10px;
+      }
+      .bg-halftone-blue {
+        background-image: radial-gradient(rgba(37, 99, 235, 0.3) 1px, transparent 1px);
+        background-size: 8px 8px;
+      }
+      .bg-stripes {
+        background: repeating-linear-gradient(
+          45deg,
+          transparent,
+          transparent 10px,
+          rgba(255, 255, 255, 0.05) 10px,
+          rgba(255, 255, 255, 0.05) 20px
+        );
+      }
+      .bg-noise {
+        background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 200 200' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='noiseFilter'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.65' numOctaves='3' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23noiseFilter)' opacity='0.05'/%3E%3C/svg%3E");
+      }
+
+      /* Shapes */
+      .clip-trapezoid {
+        clip-path: polygon(0 0, 100% 0, 90% 100%, 0% 100%);
+      }
+      /* P5 Style Bubbles - Optimized for text safety */
+      .clip-p5-bubble-left {
+         /* Subtle cut corners */
+         clip-path: polygon(0% 0%, 100% 0%, 100% 95%, 95% 100%, 0% 100%, 0% 15%, 2% 0%);
+      }
+      .clip-p5-bubble-right {
+         /* Subtle cut corners mirrored */
+         clip-path: polygon(0% 0%, 100% 0%, 98% 0%, 100% 15%, 100% 100%, 5% 100%, 0% 95%);
+      }
+      
+      .clip-narrator-box {
+          clip-path: polygon(2% 0%, 100% 0%, 100% 90%, 98% 100%, 0% 100%);
+      }
+
+      /* Animations */
+      @keyframes float {
+        0%, 100% { transform: translateY(0px); }
+        50% { transform: translateY(-10px); }
+      }
+      .animate-float {
+        animation: float 4s ease-in-out infinite;
+      }
+      @keyframes glitch {
+        0% { transform: translate(0); }
+        20% { transform: translate(-2px, 2px); }
+        40% { transform: translate(-2px, -2px); }
+        60% { transform: translate(2px, 2px); }
+        80% { transform: translate(2px, -2px); }
+        100% { transform: translate(0); }
+      }
+      .group:hover .group-hover\:animate-glitch {
+        animation: glitch 0.3s cubic-bezier(.25, .46, .45, .94) both infinite;
+      }
+    </style>
+  <script type="importmap">
+{
+  "imports": {
+    "react": "https://esm.sh/react@^19.2.3",
+    "react-dom/": "https://esm.sh/react-dom@^19.2.3/",
+    "react/": "https://esm.sh/react@^19.2.3/",
+    "lucide-react": "https://esm.sh/lucide-react@^0.562.0",
+    "@google/genai": "https://esm.sh/@google/genai"
+  }
+}
+</script>
+<link rel="stylesheet" href="/index.css">
+</head>
+  <body>
+    <div id="root"></div>
+  <script type="module" src="/index.tsx"></script>
+</body>
+</html>
