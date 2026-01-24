@@ -101,13 +101,35 @@ export const drawWorldMapCanvas = (
     // Terrain
     mapData.terrain.filter(f => (f.floor || 0) === floor).forEach(feat => {
         const path = new Path2D(feat.path);
-        ctx.fillStyle = feat.color;
-        ctx.fill(path);
+        const color = feat.color?.toLowerCase();
+        const shouldFill = !!feat.color && color !== 'none' && color !== 'transparent' && color !== 'rgba(0,0,0,0)';
+        if (shouldFill) {
+            ctx.fillStyle = feat.color;
+            ctx.fill(path);
+        }
         if (feat.strokeColor && feat.strokeWidth) {
             ctx.strokeStyle = feat.strokeColor;
             ctx.lineWidth = Math.min(feat.strokeWidth, 20);
             ctx.stroke(path);
         }
+    });
+
+    // Routes
+    mapData.routes.filter(r => (r.floor || 0) === floor).forEach(route => {
+        const path = new Path2D(route.path);
+        ctx.save();
+        ctx.strokeStyle = route.color;
+        ctx.lineWidth = route.width;
+        ctx.lineCap = 'round';
+        ctx.lineJoin = 'round';
+        if (route.type === 'ALLEY') {
+            ctx.setLineDash([120, 80]);
+        } else if (route.type === 'TRADE_ROUTE') {
+            ctx.setLineDash([200, 120]);
+        }
+        ctx.stroke(path);
+        ctx.setLineDash([]);
+        ctx.restore();
     });
 
     // Locations

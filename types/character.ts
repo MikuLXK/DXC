@@ -45,6 +45,13 @@ export interface BodyParts {
     右腿: BodyPartStats;
 }
 
+export interface StatusEffect {
+  名称: string;
+  类型: 'Buff' | 'DeBuff';
+  效果: string;
+  持续时间: string;
+}
+
 export interface CharacterStats {
   姓名: string;
   种族: string;
@@ -94,8 +101,8 @@ export interface CharacterStats {
   发展能力: FalnaAbility[];
   技能: Skill[];
   魔法: MagicSpell[];
-  诅咒: { 名称: string; 描述: string }[];
-  状态: string[]; // Buffs
+  诅咒: StatusEffect[];
+  状态: StatusEffect[];
 
   装备: {
     头部: string;

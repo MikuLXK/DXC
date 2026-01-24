@@ -3,7 +3,7 @@ import { AppSettings, GameState, PromptModule, AIEndpointConfig, Confidant, Memo
 import { GoogleGenAI } from "@google/genai";
 import { 
     P_SYS_FORMAT, P_SYS_CORE, P_SYS_STATS, P_SYS_LEVELING, P_SYS_COMBAT,
-    P_WORLD_DUNGEON, P_WORLD_PHONE, P_WORLD_ECO, P_DYN_NPC, P_NPC_MEMORY, P_WORLD_NEWS, P_WORLD_DENATUS, P_WORLD_RUMORS, P_DYN_MAP, P_MAP_DISCOVERY,
+    P_WORLD_DUNGEON, P_WORLD_PHONE, P_WORLD_ECO, P_DYN_NPC, P_NPC_MEMORY, P_WORLD_NEWS, P_WORLD_DENATUS, P_WORLD_RUMORS, P_WORLD_EVENTS, P_DYN_MAP, P_MAP_DISCOVERY,
     P_COT_LOGIC, P_START_REQ, P_MEM_S2M, P_MEM_M2L, P_DATA_STRUCT,
     P_WRITING_REQ, P_WORLD_VALUES, P_LOOT_SYSTEM,
     P_PHYSIOLOGY_EASY, P_PHYSIOLOGY_NORMAL, P_PHYSIOLOGY_HARD, P_PHYSIOLOGY_HELL,
@@ -37,7 +37,8 @@ export const DEFAULT_PROMPT_MODULES: PromptModule[] = [
     { id: 'world_news', name: '1. 公会新闻生成', group: '世界动态', usage: 'CORE', isActive: true, content: P_WORLD_NEWS, order: 30 },
     { id: 'world_denatus', name: '2. 诸神神会', group: '世界动态', usage: 'CORE', isActive: true, content: P_WORLD_DENATUS, order: 31 },
     { id: 'world_rumors', name: '3. 街头传闻', group: '世界动态', usage: 'CORE', isActive: true, content: P_WORLD_RUMORS, order: 32 },
-    { id: 'sys_story_guide', name: '4. 剧情导演', group: '世界动态', usage: 'CORE', isActive: true, content: P_STORY_GUIDE, order: 33 },
+    { id: 'world_events', name: '4. 世界事件管理', group: '世界动态', usage: 'CORE', isActive: true, content: P_WORLD_EVENTS, order: 33 },
+    { id: 'sys_story_guide', name: '5. 剧情导演', group: '世界动态', usage: 'CORE', isActive: true, content: P_STORY_GUIDE, order: 34 },
 
     // 【COT思维链】
     { id: 'cot_logic', name: '1. 核心思维链', group: 'COT思维链', usage: 'CORE', isActive: true, content: P_COT_LOGIC, order: 0 },
@@ -238,6 +239,8 @@ export const constructWorldContext = (world: any, params: any): string => {
            `眷族声望: ${world.眷族声望}\n` +
            `头条新闻: ${JSON.stringify(world.头条新闻 || [])}\n` + 
            `街头传闻: ${JSON.stringify(world.街头传闻 || [])}\n` +
+           `诸神神会: ${JSON.stringify(world.诸神神会 || {}, null, 0)}\n` +
+           `NPC后台跟踪: ${JSON.stringify(world.NPC后台跟踪 || [])}\n` +
            `下次更新: ${world.下次更新 || "待定"}`;
 };
 
@@ -258,7 +261,7 @@ const parseGameTimeLabel = (timestamp?: string) => {
     return { dayLabel, timeLabel, sortValue };
 };
 
-export const constructPhoneContext = (messages: PhoneMessage[], moments: MomentPost[], params: any): string => {
+export const constructPhoneContext = (messages: PhoneMessage[], moments: MomentPost[], phoneState: any, params: any): string => {
     const perTargetLimit = typeof params?.perTargetLimit === 'number' ? params.perTargetLimit : (params?.messageLimit || 10);
     const includeMoments = params?.includeMoments !== false;
     const momentLimit = typeof params?.momentLimit === 'number' ? params.momentLimit : 6;
@@ -303,6 +306,9 @@ export const constructPhoneContext = (messages: PhoneMessage[], moments: MomentP
     };
 
     let output = "[手机通讯 (Phone)]\n";
+    if (phoneState) {
+        output += `设备状态: 电量 ${phoneState.电量 ?? '??'}%, 信号 ${phoneState.当前信号 ?? '??'}/4\n`;
+    }
 
     const privateThreads = new Map<string, PhoneMessage[]>();
     (messages || []).forEach((m) => {
@@ -388,6 +394,15 @@ export const constructMemoryContext = (memory: MemorySystem, logs: LogEntry[], c
     let output = "[记忆流 (Memory Stream)]\n";
     const instantTurnLimit = config.instantLimit || 10; // Number of turns
     const shortTermEntryLimit = config.shortTermLimit || 30; // Number of summaries
+
+    const formatShortTermLabel = (entry: MemoryEntry) => {
+        const stamp = entry.timestamp || "";
+        const match = stamp.match(/第(\d+)日\s*(\d{1,2}:\d{2})/);
+        if (match) return `第${match[1]}日${match[2]}`;
+        if (stamp) return stamp.replace(/\s+/g, "");
+        if (typeof entry.turnIndex === 'number') return `第${entry.turnIndex}日??:??`;
+        return "第?日??:??";
+    };
     
     // 1. Long Term (All)
     if (memory.longTerm?.length) {
@@ -417,7 +432,7 @@ export const constructMemoryContext = (memory: MemorySystem, logs: LogEntry[], c
         .slice(-shortTermEntryLimit); // Take the last M of the older turns
         
     if (validShortTerms.length > 0) {
-        output += `【短期记忆 (Short Term Summary)】:\n${validShortTerms.map(m => `[Turn ${m.turnIndex}] ${m.content}`).join('\n')}\n\n`;
+        output += `【短期记忆 (Short Term Summary)】:\n${validShortTerms.map(m => `[${formatShortTermLabel(m)}]${m.content}`).join('\n')}\n\n`;
     }
 
     // 4. Instant Logs (Grouped by Turn)
@@ -444,8 +459,16 @@ export const constructMemoryContext = (memory: MemorySystem, logs: LogEntry[], c
     return output.trim();
 };
 
-export const constructInventoryContext = (inventory: InventoryItem[], publicLoot: InventoryItem[], carrier: string | undefined, params: any): string => {
-    let invContent = `[背包物品 (Inventory)]\n${JSON.stringify(inventory, null, 2)}\n\n[公共战利品背包 (Public Loot - Carrier: ${carrier || 'Unknown'})]\n${JSON.stringify(publicLoot || [], null, 2)}`;
+export const constructInventoryContext = (
+    inventory: InventoryItem[],
+    archivedLoot: InventoryItem[],
+    publicLoot: InventoryItem[],
+    carrier: string | undefined,
+    params: any
+): string => {
+    let invContent = `[背包物品 (Inventory)]\n${JSON.stringify(inventory, null, 2)}\n\n` +
+        `[战利品保管库 (Archived Loot)]\n${JSON.stringify(archivedLoot || [], null, 2)}\n\n` +
+        `[公共战利品背包 (Public Loot - Carrier: ${carrier || 'Unknown'})]\n${JSON.stringify(publicLoot || [], null, 2)}`;
     return invContent;
 };
 
@@ -536,12 +559,13 @@ export const generateSingleModuleContext = (mod: ContextModuleConfig, gameState:
         case 'INVENTORY_CONTEXT':
             return constructInventoryContext(
                 gameState.背包,
+                gameState.战利品,
                 gameState.公共战利品,
                 gameState.战利品背负者,
                 mod.params
             );
         case 'PHONE_CONTEXT':
-            return constructPhoneContext(gameState.短信, gameState.动态, mod.params);
+            return constructPhoneContext(gameState.短信, gameState.动态, gameState.魔石通讯终端, mod.params);
         case 'TASK_CONTEXT':
             return constructTaskContext(gameState.任务, mod.params);
         case 'FAMILIA_CONTEXT':
@@ -718,9 +742,10 @@ export const generateDungeonMasterResponse = async (
     const systemPrompt = assembleFullPrompt(input, gameState, settings, commandsOverride);
     const userContent = `Player Input: "${input}"\nPlease respond in JSON format as defined in system prompt.`;
 
+    let rawText = "";
     try {
         const streamCallback = settings.enableStreaming ? onStream : undefined;
-        const rawText = await dispatchAIRequest(settings.aiConfig.unified, systemPrompt, userContent, streamCallback);
+        rawText = await dispatchAIRequest(settings.aiConfig.unified, systemPrompt, userContent, streamCallback);
 
         if (!rawText || !rawText.trim()) throw new Error("AI returned empty response.");
 
@@ -740,15 +765,29 @@ export const generateDungeonMasterResponse = async (
             else if (cleanJson.includes('```')) cleanJson = cleanJson.split('```')[1].split('```')[0];
         }
 
-        const parsed = JSON.parse(cleanJson);
-        return { ...parsed, rawResponse: rawText };
+        try {
+            const parsed = JSON.parse(cleanJson);
+            return { ...parsed, rawResponse: rawText };
+        } catch (parseError: any) {
+            console.error("AI JSON Parse Error", parseError);
+            return {
+                tavern_commands: [],
+                logs: [{
+                    sender: "system",
+                    text: `JSON解析失败: ${parseError.message}\n请在“原文”中修正后重试。\n\n【原始AI消息】\n${rawText}`
+                }],
+                shortTerm: "Error occurred.",
+                rawResponse: rawText
+            };
+        }
     } catch (error: any) {
         console.error("AI Generation Error", error);
+        const rawBlock = rawText ? `\n\n【原始AI消息】\n${rawText}` : "";
         return {
             tavern_commands: [],
-            logs: [{ sender: "system", text: `(系统错误: ${error.message})\nRaw: ${error.rawText || 'N/A'}` }],
+            logs: [{ sender: "system", text: `系统错误: ${error.message}${rawBlock}` }],
             shortTerm: "Error occurred.", 
-            rawResponse: error.message
+            rawResponse: rawText || error.message
         };
     }
 };

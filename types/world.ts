@@ -91,12 +91,29 @@ export interface WorldMapData {
     dungeonStructure: DungeonLayer[];
 }
 
+export interface DenatusState {
+  下次神会开启时间: string;
+  神会主题: string;
+  讨论内容: { 角色: string; 对话: string }[];
+  最终结果: string;
+}
+
+export interface NpcBackgroundTracking {
+  NPC: string;
+  当前行动: string;
+  位置?: string;
+  进度?: string;
+  预计完成?: string;
+}
+
 // Refactor Business States to Chinese
 export interface WorldState {
   异常指数: number; // tensionLevel
   眷族声望: number; // publicOpinion
   头条新闻: string[]; // breakingNews
   街头传闻: { 主题: string; 传播度: number }[]; // activeRumors
+  诸神神会: DenatusState;
+  NPC后台跟踪: NpcBackgroundTracking[];
   下次更新?: string; // nextUpdate
 }
 

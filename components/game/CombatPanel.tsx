@@ -90,7 +90,7 @@ export const CombatPanel: React.FC<CombatPanelProps> = ({
       </div>
 
       {/* --- Battlefield --- */}
-      <div className="flex-1 relative z-10 p-4 md:p-6 flex flex-col gap-6">
+      <div className="flex-1 min-h-0 relative z-10 p-3 md:p-6 flex flex-col gap-4 md:gap-6 overflow-y-auto custom-scrollbar">
           <div className="flex items-center justify-between text-xs uppercase tracking-[0.35em] text-red-400 font-bold">
               <div className="flex items-center gap-2">
                   <Swords size={14} />
@@ -99,9 +99,9 @@ export const CombatPanel: React.FC<CombatPanelProps> = ({
               <span className="text-red-500/70">数量: {enemies.length}</span>
           </div>
 
-          <div className="flex flex-col lg:flex-row gap-6">
+          <div className="flex flex-col lg:flex-row gap-4 md:gap-6 min-h-0">
               <div className="flex-1">
-                  <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-3 gap-4 max-h-[360px] md:max-h-[420px] overflow-y-auto pr-1 custom-scrollbar">
+                  <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-3 gap-3 md:gap-4 max-h-[240px] md:max-h-[420px] overflow-y-auto pr-1 custom-scrollbar">
                       {enemies.map(enemy => {
                           const hp = getEnemyHp(enemy);
                           const mp = getEnemyMp(enemy);
@@ -129,15 +129,15 @@ export const CombatPanel: React.FC<CombatPanelProps> = ({
                                               {enemy.名称}
                                           </div>
                                           <div className="flex items-center gap-2 mt-1">
-                                              <span className="text-[10px] font-mono text-red-300 border border-red-900 px-1">LV.{enemy.等级 || '?'}</span>
-                                              <span className="text-[10px] font-mono text-zinc-500">ATK {enemy.攻击力 ?? '??'}</span>
+                                              <span className="text-[10px] font-mono text-red-300 border border-red-900 px-1">等级 {enemy.等级 || '?'}</span>
+                                              <span className="text-[10px] font-mono text-zinc-500">攻击 {enemy.攻击力 ?? '??'}</span>
                                           </div>
                                       </div>
                                   </div>
                                   <div className="space-y-2">
                                       <div>
                                           <div className="flex justify-between text-[10px] text-red-300 font-bold mb-1">
-                                              <span>HP</span>
+                                              <span>生命</span>
                                               <span>{Math.round(hpPercent)}%</span>
                                           </div>
                                           <div className="w-full h-3 bg-black border border-red-900 overflow-hidden">
@@ -147,7 +147,7 @@ export const CombatPanel: React.FC<CombatPanelProps> = ({
                                       {mp && (
                                           <div>
                                               <div className="flex justify-between text-[10px] text-purple-300 font-bold mb-1">
-                                                  <span>MP</span>
+                                                  <span>精神</span>
                                                   <span>{Math.round(mpPercent)}%</span>
                                               </div>
                                               <div className="w-full h-2 bg-black border border-purple-900 overflow-hidden">
@@ -162,7 +162,7 @@ export const CombatPanel: React.FC<CombatPanelProps> = ({
                   </div>
               </div>
 
-              <div className="w-full lg:w-[320px] bg-zinc-950/90 border-2 border-red-800 p-4 flex flex-col gap-4 relative overflow-hidden">
+              <div className="w-full lg:w-[320px] bg-zinc-950/90 border-2 border-red-800 p-4 flex flex-col gap-4 relative overflow-hidden max-h-[240px] md:max-h-none overflow-y-auto custom-scrollbar">
                   <div className="absolute -top-6 -right-4 text-red-900/40">
                       <Target size={64} />
                   </div>
@@ -201,26 +201,26 @@ export const CombatPanel: React.FC<CombatPanelProps> = ({
       </div>
 
       {/* --- Info Bar (Middle) --- */}
-      <div className="h-10 bg-red-950/30 border-y border-red-900 flex items-center justify-between px-6 z-20 backdrop-blur-md shrink-0">
+      <div className="h-10 bg-red-950/30 border-y border-red-900 flex items-center justify-between px-4 md:px-6 z-20 backdrop-blur-md shrink-0">
          <div className="text-red-500 font-bold text-sm uppercase tracking-widest flex items-center gap-2">
              <Activity size={16} className="animate-pulse" />
-             COMBAT ACTIVE
+             战斗进行中
          </div>
          <div className="text-zinc-400 font-mono text-xs truncate max-w-[50%]">
-             LOG: {combatState.战斗记录[combatState.战斗记录.length - 1] || "战斗开始"}
+             记录: {combatState.战斗记录[combatState.战斗记录.length - 1] || "战斗开始"}
          </div>
       </div>
 
       {/* --- Action Menu (Bottom) --- */}
-      <div className="h-[40%] max-h-[280px] bg-zinc-900 border-t-4 border-black relative z-30 flex shrink-0">
+      <div className="h-[45%] md:h-[40%] max-h-[320px] md:max-h-[280px] bg-zinc-900 border-t-4 border-black relative z-30 flex shrink-0">
          
          {/* Left: Player Stats */}
-         <div className="w-1/3 md:w-1/4 bg-black border-r border-zinc-800 p-4 md:p-6 flex flex-col justify-center gap-4">
+         <div className="w-2/5 md:w-1/4 bg-black border-r border-zinc-800 p-3 md:p-6 flex flex-col justify-center gap-3">
              <div>
-                 <h3 className="text-xl md:text-2xl font-display text-white font-bold tracking-wide uppercase truncate">
+                 <h3 className="text-lg md:text-2xl font-display text-white font-bold tracking-wide uppercase truncate">
                      {playerStats.姓名}
                  </h3>
-                 <span className="text-xs text-blue-500 font-bold">LV.{playerStats.等级}</span>
+                 <span className="text-[10px] text-blue-500 font-bold">等级 {playerStats.等级}</span>
              </div>
              <div className="text-[10px] uppercase tracking-[0.35em] text-zinc-500 flex items-center gap-2">
                  <Target size={12} className="text-red-500" />
@@ -228,11 +228,11 @@ export const CombatPanel: React.FC<CombatPanelProps> = ({
              </div>
              <div className="space-y-3">
                  <div className="relative">
-                     <div className="flex justify-between text-[10px] text-green-500 font-bold mb-0.5"><span>HP</span><span>{playerStats.生命值}/{playerStats.最大生命值}</span></div>
+                     <div className="flex justify-between text-[10px] text-green-500 font-bold mb-0.5"><span>生命</span><span>{playerStats.生命值}/{playerStats.最大生命值}</span></div>
                      <div className="h-2 bg-zinc-800"><div className="h-full bg-green-600" style={{ width: `${(playerStats.生命值/playerStats.最大生命值)*100}%`}} /></div>
                  </div>
                  <div className="relative">
-                     <div className="flex justify-between text-[10px] text-purple-500 font-bold mb-0.5"><span>MP</span><span>{playerStats.精神力}/{playerStats.最大精神力}</span></div>
+                     <div className="flex justify-between text-[10px] text-purple-500 font-bold mb-0.5"><span>精神</span><span>{playerStats.精神力}/{playerStats.最大精神力}</span></div>
                      <div className="h-2 bg-zinc-800"><div className="h-full bg-purple-600" style={{ width: `${(playerStats.精神力/playerStats.最大精神力)*100}%`}} /></div>
                  </div>
              </div>
@@ -242,12 +242,12 @@ export const CombatPanel: React.FC<CombatPanelProps> = ({
          <div className="flex-1 p-4 md:p-6 bg-zinc-900 overflow-y-auto custom-scrollbar">
              {menuLevel === 'MAIN' ? (
                  <div className="grid grid-cols-2 md:grid-cols-3 gap-3 h-full">
-                    <CombatButton label="攻击 (Attack)" icon={<Sword/>} onClick={() => handleTargetedAction('attack')} color="bg-red-700 hover:bg-red-600" />
-                    <CombatButton label="技能 (Skill)" icon={<Zap/>} onClick={() => setMenuLevel('SKILLS')} color="bg-blue-700 hover:bg-blue-600" />
-                    <CombatButton label="物品 (Item)" icon={<Package/>} onClick={() => setMenuLevel('ITEMS')} color="bg-green-700 hover:bg-green-600" />
-                    <CombatButton label="防御 (Guard)" icon={<Shield/>} onClick={() => handleTargetedAction('guard')} color="bg-yellow-700 hover:bg-yellow-600" />
-                    <CombatButton label="自由行动 (Free)" icon={<MessageSquare/>} onClick={() => setMenuLevel('TALK')} color="bg-pink-700 hover:bg-pink-600" />
-                    <CombatButton label="逃跑 (Escape)" icon={<AlertTriangle/>} onClick={() => onPlayerAction('escape')} color="bg-zinc-700 hover:bg-zinc-600" />
+                    <CombatButton label="攻击" icon={<Sword/>} onClick={() => handleTargetedAction('attack')} color="bg-red-700 hover:bg-red-600" />
+                    <CombatButton label="技能" icon={<Zap/>} onClick={() => setMenuLevel('SKILLS')} color="bg-blue-700 hover:bg-blue-600" />
+                    <CombatButton label="物品" icon={<Package/>} onClick={() => setMenuLevel('ITEMS')} color="bg-green-700 hover:bg-green-600" />
+                    <CombatButton label="防御" icon={<Shield/>} onClick={() => handleTargetedAction('guard')} color="bg-yellow-700 hover:bg-yellow-600" />
+                    <CombatButton label="自由行动" icon={<MessageSquare/>} onClick={() => setMenuLevel('TALK')} color="bg-pink-700 hover:bg-pink-600" />
+                    <CombatButton label="逃跑" icon={<AlertTriangle/>} onClick={() => onPlayerAction('escape')} color="bg-zinc-700 hover:bg-zinc-600" />
                  </div>
              ) : menuLevel === 'SKILLS' ? (
                  <div className="h-full flex flex-col">

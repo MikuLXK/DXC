@@ -1,6 +1,6 @@
 
 import React, { useState, useRef } from 'react';
-import { X, Heart, Star, BookOpen, User, Eye, EyeOff, Shield, Zap, Activity, Crown, Upload, MessageSquareDashed, Ghost, Swords, Dna, Clock, ChevronDown, ChevronUp, MapPin, Radio } from 'lucide-react';
+import { X, Heart, Star, BookOpen, Eye, EyeOff, Shield, Upload, MessageSquareDashed, Swords, Dna, Clock, ChevronDown, ChevronUp, Radio, Backpack } from 'lucide-react';
 import { Confidant } from '../../../types';
 
 interface SocialModalProps {
@@ -21,6 +21,8 @@ interface NormalCardProps {
 
 const NormalCard: React.FC<NormalCardProps> = ({ c, onToggleAttention, onToggleContext }) => {
     const [isExpanded, setIsExpanded] = useState(false);
+    const hasGear = !!c.装备 && Object.values(c.装备 || {}).some(Boolean);
+    const bagItems = (c.背包 || []).slice(0, 4);
 
     return (
       <div className="relative bg-zinc-900 border border-zinc-700 p-4 hover:bg-zinc-800 transition-all group shadow-md">
@@ -53,7 +55,7 @@ const NormalCard: React.FC<NormalCardProps> = ({ c, onToggleAttention, onToggleC
                           <button 
                               onClick={() => onToggleAttention(c)}
                               className="text-zinc-600 hover:text-yellow-500 transition-colors p-1"
-                              title="设为特别关注"
+                              title="设为特别关心"
                           >
                               <Eye size={16} />
                           </button>
@@ -63,16 +65,20 @@ const NormalCard: React.FC<NormalCardProps> = ({ c, onToggleAttention, onToggleC
                   <div className="text-zinc-400 text-xs mt-1 flex flex-wrap items-center gap-3">
                       <span className="uppercase font-mono text-zinc-300">{c.眷族}</span>
                       <span className="text-zinc-700">|</span>
-                      <span>{c.性别} · {c.年龄}岁</span>
+                      <span>{c.种族} · {c.性别} · {c.年龄}岁</span>
                       <span className="text-zinc-700">|</span>
                       <span className="text-pink-400 font-bold">关系: {c.关系状态}</span>
+                      {c.称号 && <span className="text-[10px] text-zinc-400 border border-zinc-700 px-1">「{c.称号}」</span>}
+                      {c.是否在场 && <span className="text-[10px] text-emerald-400 border border-emerald-900 px-1">在场</span>}
+                      {c.是否队友 && <span className="text-[10px] text-indigo-400 border border-indigo-900 px-1">队友</span>}
+                      {c.已交换联系方式 && <span className="text-[10px] text-blue-400 border border-blue-900 px-1">已交换联系方式</span>}
                   </div>
               </div>
           </div>
 
           {/* Intro / Appearance (Always Visible snippet) */}
           <div className="mt-3 text-xs text-zinc-400 leading-relaxed border-t border-zinc-800 pt-2">
-              <span className="text-zinc-500 font-bold uppercase mr-2">Info:</span>
+              <span className="text-zinc-500 font-bold uppercase mr-2">简介:</span>
               {c.简介 || c.外貌 || "暂无详细描述。"}
           </div>
 
@@ -85,11 +91,11 @@ const NormalCard: React.FC<NormalCardProps> = ({ c, onToggleAttention, onToggleC
               {isExpanded ? "收起信息" : "查看记忆与详情"}
           </button>
 
-          {/* Expanded Content: Memories */}
+          {/* Expanded Content: Memories + Status */}
           {isExpanded && (
               <div className="mt-2 bg-black/40 p-3 border-t border-zinc-700 animate-in slide-in-from-top-2">
                   <h4 className="text-zinc-500 font-bold uppercase text-[10px] flex items-center gap-2 mb-2">
-                      <MessageSquareDashed size={10} /> 关键记忆 (Memories)
+                      <MessageSquareDashed size={10} /> 关键记忆
                   </h4>
                   <div className="space-y-2 max-h-40 overflow-y-auto custom-scrollbar pr-1">
                       {c.记忆 && c.记忆.length > 0 ? (
@@ -101,6 +107,42 @@ const NormalCard: React.FC<NormalCardProps> = ({ c, onToggleAttention, onToggleC
                           ))
                       ) : (
                           <div className="text-[10px] text-zinc-700 italic">暂无互动记录</div>
+                      )}
+                  </div>
+                  <div className="mt-3 grid grid-cols-1 gap-3">
+                      <div className="bg-zinc-900/60 border border-zinc-800 p-2">
+                          <div className="text-[10px] text-zinc-500 uppercase mb-1">档案摘要</div>
+                          <div className="text-[10px] text-zinc-300 space-y-1">
+                              {c.背景 && <div>背景: {c.背景}</div>}
+                              {c.外貌 && <div>外貌: {c.外貌}</div>}
+                              {c.性格 && <div>性格: {c.性格}</div>}
+                              {c.已知能力 && <div>能力: {c.已知能力}</div>}
+                              {!c.背景 && !c.外貌 && !c.性格 && !c.已知能力 && <div className="text-zinc-600 italic">暂无更多档案</div>}
+                          </div>
+                      </div>
+                      {hasGear && (
+                          <div className="bg-zinc-900/60 border border-zinc-800 p-2">
+                              <div className="text-[10px] text-zinc-500 uppercase mb-1">装备摘要</div>
+                              <div className="grid grid-cols-2 gap-1 text-[10px] text-zinc-300">
+                                  {Object.entries(c.装备 || {}).map(([slot, name]) => (
+                                      name ? <span key={slot} className="truncate">{slot}: {name}</span> : null
+                                  ))}
+                              </div>
+                          </div>
+                      )}
+                      {bagItems.length > 0 && (
+                          <div className="bg-zinc-900/60 border border-zinc-800 p-2">
+                              <div className="text-[10px] text-zinc-500 uppercase mb-1 flex items-center gap-1">
+                                  <Backpack size={10} /> 背包摘要
+                              </div>
+                              <div className="flex flex-wrap gap-1">
+                                  {bagItems.map(item => (
+                                      <span key={item.id} className="text-[9px] text-zinc-300 border border-zinc-700 px-1">
+                                          {item.名称} x{item.数量}
+                                      </span>
+                                  ))}
+                              </div>
+                          </div>
                       )}
                   </div>
               </div>
@@ -174,20 +216,11 @@ export const SocialModal: React.FC<SocialModalProps> = ({
   };
 
   const renderSpecialCard = (c: Confidant) => {
-      // Safely access nested properties
-      // @ts-ignore - Handle optional chaining safely for JS flexibility
-      const str = c.能力值?.力量 || '??';
-      // @ts-ignore
-      const end = c.能力值?.耐久 || '??';
-      // @ts-ignore
-      const dex = c.能力值?.灵巧 || '??';
-      // @ts-ignore
-      const agi = c.能力值?.敏捷 || '??';
-      // @ts-ignore
-      const mag = c.能力值?.魔力 || '??';
-
       return (
       <div key={c.id} className="relative bg-zinc-800 border-l-8 border-pink-500 p-6 shadow-lg flex flex-col md:flex-row gap-6 mb-8">
+          <div className="absolute top-0 left-0 bg-pink-600 text-white text-[10px] font-bold uppercase tracking-widest px-3 py-1">
+              特别关心
+          </div>
           {/* Left Visual */}
           <div className="w-full md:w-64 shrink-0 flex flex-col items-center">
               <div 
@@ -212,9 +245,19 @@ export const SocialModal: React.FC<SocialModalProps> = ({
                   <div className="bg-black text-pink-400 px-3 py-1 inline-block font-mono text-xs uppercase tracking-widest border border-pink-900">
                       {c.眷族 || "无眷族"}
                   </div>
+                  {c.称号 && (
+                      <div className="text-[10px] text-zinc-300 uppercase tracking-widest border border-zinc-700 px-2 py-0.5 inline-block">
+                          「{c.称号}」
+                      </div>
+                  )}
                   <div className="flex justify-center gap-4 mt-2 text-xs text-zinc-400">
-                      <span className="flex items-center gap-1"><Dna size={12}/> {c.性别 || 'Unknown'}</span>
-                      <span className="flex items-center gap-1"><Clock size={12}/> {c.年龄 ? `${c.年龄}岁` : 'Unknown'}</span>
+                      <span className="flex items-center gap-1"><Dna size={12}/> {c.性别 || '未知'}</span>
+                      <span className="flex items-center gap-1"><Clock size={12}/> {c.年龄 ? `${c.年龄}岁` : '未知'}</span>
+                  </div>
+                  <div className="flex justify-center gap-2 mt-2 text-[10px]">
+                      {c.是否在场 && <span className="text-emerald-400 border border-emerald-900 px-2">在场</span>}
+                      {c.是否队友 && <span className="text-indigo-400 border border-indigo-900 px-2">队友</span>}
+                      {c.已交换联系方式 && <span className="text-blue-400 border border-blue-900 px-2">已交换ID</span>}
                   </div>
               </div>
               
@@ -229,7 +272,7 @@ export const SocialModal: React.FC<SocialModalProps> = ({
                       `}
                   >
                       {c.特别关注 ? <Eye size={12} /> : <EyeOff size={12} />}
-                      {c.特别关注 ? '特别关注中' : '设为特别关注'}
+                      {c.特别关注 ? '特别关心中' : '设为特别关心'}
                   </button>
 
                   <button 
@@ -265,14 +308,6 @@ export const SocialModal: React.FC<SocialModalProps> = ({
                        <span className="text-lg font-sans text-zinc-300 mt-1">{c.关系状态}</span>
                    </div>
                    
-                   <div className="ml-auto bg-zinc-900 border border-yellow-600/50 p-2 min-w-[200px]">
-                       <span className="text-[10px] text-yellow-600 uppercase font-bold flex items-center gap-1">
-                           <Activity size={10} /> 当前行动
-                       </span>
-                       <div className="text-sm text-yellow-500 font-mono mt-1 leading-tight">
-                           {c.是否在场 ? "在此处" : "不在场"} - {c.当前行动 || "Idle"}
-                       </div>
-                   </div>
                </div>
 
                <div className="flex-1 grid grid-cols-1 lg:grid-cols-2 gap-6">
@@ -281,6 +316,18 @@ export const SocialModal: React.FC<SocialModalProps> = ({
                            <h4 className="text-pink-400 font-bold uppercase text-xs flex items-center gap-2 mb-1"><BookOpen size={14}/> 背景</h4>
                            <p className="text-zinc-400 text-xs leading-relaxed line-clamp-3">
                                {c.背景 || "暂无背景信息。"}
+                           </p>
+                       </div>
+                       <div>
+                           <h4 className="text-pink-400 font-bold uppercase text-xs flex items-center gap-2 mb-1"><Star size={14}/> 外貌</h4>
+                           <p className="text-zinc-400 text-xs leading-relaxed">
+                               {c.外貌 || c.简介 || "暂无外貌描述。"}
+                           </p>
+                       </div>
+                       <div>
+                           <h4 className="text-pink-400 font-bold uppercase text-xs flex items-center gap-2 mb-1"><Star size={14}/> 性格</h4>
+                           <p className="text-zinc-400 text-xs leading-relaxed">
+                               {c.性格 || "暂无性格信息。"}
                            </p>
                        </div>
                        <div>
@@ -309,32 +356,46 @@ export const SocialModal: React.FC<SocialModalProps> = ({
                        </div>
                    </div>
 
-                   <div>
-                       {c.身份 === '冒险者' ? (
-                           <div className="bg-black/40 p-4 border border-zinc-700 h-full">
-                               <h4 className="text-zinc-500 font-bold uppercase text-xs mb-3 flex items-center gap-2">
-                                   <Shield size={12} /> 能力值
-                               </h4>
-                               {c.能力值 ? (
-                                   <div className="grid grid-cols-2 gap-y-2 text-sm font-mono">
-                                       <StatDisplay label="力量" val={str} />
-                                       <StatDisplay label="耐久" val={end} />
-                                       <StatDisplay label="灵巧" val={dex} />
-                                       <StatDisplay label="敏捷" val={agi} />
-                                       <StatDisplay label="魔力" val={mag} />
-                                   </div>
-                               ) : (
-                                   <div className="text-zinc-600 text-xs italic text-center py-4">正在获取详细数据...</div>
-                               )}
-                           </div>
-                       ) : (
-                           <div className="bg-black/40 p-4 border border-zinc-700 h-full flex flex-col items-center justify-center text-zinc-600">
-                               {c.身份 === '神明' ? <Crown size={32} className="mb-2"/> : <User size={32} className="mb-2"/>}
-                               <span className="text-xs uppercase font-bold">
-                                   {c.身份 === '神明' ? '神明 (无恩惠)' : '非战斗人员'}
-                               </span>
-                           </div>
-                       )}
+                   <div className="bg-black/40 p-4 border border-zinc-700 h-full">
+                       <h4 className="text-zinc-500 font-bold uppercase text-xs mb-3 flex items-center gap-2">
+                           <Shield size={12} /> 角色档案
+                       </h4>
+                       <div className="grid grid-cols-2 gap-2 text-[10px] text-zinc-300">
+                           <div>身份: {c.身份 || '未知'}</div>
+                           <div>种族: {c.种族 || '未知'}</div>
+                           <div>眷族: {c.眷族 || '未知'}</div>
+                           <div>称号: {c.称号 || '暂无'}</div>
+                       </div>
+                       <div className="text-[10px] text-zinc-400 mt-3 leading-relaxed">
+                           {c.简介 || '暂无补充档案。'}
+                       </div>
+                   </div>
+               </div>
+               <div className="mt-6 grid grid-cols-1 lg:grid-cols-2 gap-4">
+                   <div className="bg-black/40 p-4 border border-zinc-700">
+                       <h4 className="text-zinc-500 font-bold uppercase text-xs mb-2 flex items-center gap-2">
+                           <Backpack size={12} /> 装备与背包
+                       </h4>
+                       <div className="text-[10px] text-zinc-300 space-y-1">
+                           {c.装备 && Object.values(c.装备).some(Boolean) ? (
+                               <div className="grid grid-cols-2 gap-1">
+                                   {Object.entries(c.装备).map(([slot, name]) => (
+                                       name ? <span key={slot} className="truncate">{slot}: {name}</span> : null
+                                   ))}
+                               </div>
+                           ) : (
+                               <div className="text-zinc-600 italic">暂无装备</div>
+                           )}
+                           {(c.背包 || []).length > 0 && (
+                               <div className="flex flex-wrap gap-1 mt-2">
+                                   {c.背包?.slice(0, 6).map(item => (
+                                       <span key={item.id} className="text-[9px] text-zinc-200 border border-zinc-700 px-1">
+                                           {item.名称} x{item.数量}
+                                       </span>
+                                   ))}
+                               </div>
+                           )}
+                       </div>
                    </div>
                </div>
           </div>
@@ -356,14 +417,14 @@ export const SocialModal: React.FC<SocialModalProps> = ({
             </button>
         </div>
         <div className="flex bg-black border-b border-pink-900">
-            <button onClick={() => setActiveTab('SPECIAL')} className={`flex-1 py-3 font-display uppercase text-xl tracking-widest transition-colors ${activeTab === 'SPECIAL' ? 'bg-zinc-800 text-pink-500 border-b-4 border-pink-500' : 'text-zinc-600 hover:text-zinc-300'}`}>特别关注</button>
+            <button onClick={() => setActiveTab('SPECIAL')} className={`flex-1 py-3 font-display uppercase text-xl tracking-widest transition-colors ${activeTab === 'SPECIAL' ? 'bg-zinc-800 text-pink-500 border-b-4 border-pink-500' : 'text-zinc-600 hover:text-zinc-300'}`}>特别关心</button>
             <button onClick={() => setActiveTab('ALL')} className={`flex-1 py-3 font-display uppercase text-xl tracking-widest transition-colors ${activeTab === 'ALL' ? 'bg-zinc-800 text-pink-500 border-b-4 border-pink-500' : 'text-zinc-600 hover:text-zinc-300'}`}>普通联系人</button>
         </div>
         <div className="p-8 overflow-y-auto custom-scrollbar flex-1 bg-[url('https://www.transparenttextures.com/patterns/stardust.png')] bg-zinc-900">
             <div className={`grid gap-4 ${activeTab === 'ALL' ? 'grid-cols-1 md:grid-cols-2 lg:grid-cols-3' : 'grid-cols-1'}`}>
                 {getFilteredConfidants().length > 0 ? (
                     getFilteredConfidants().map(c => activeTab === 'SPECIAL' ? renderSpecialCard(c) : <NormalCard key={c.id} c={c} onToggleAttention={handleToggleAttention} onToggleContext={handleToggleContext} />)
-                ) : <div className="col-span-full text-center text-zinc-500 font-display text-2xl py-20">{activeTab === 'SPECIAL' ? "暂无特别关注对象" : "暂无普通联系人"}</div>}
+                ) : <div className="col-span-full text-center text-zinc-500 font-display text-2xl py-20">{activeTab === 'SPECIAL' ? "暂无特别关心对象" : "暂无普通联系人"}</div>}
             </div>
         </div>
       </div>
@@ -371,20 +432,3 @@ export const SocialModal: React.FC<SocialModalProps> = ({
   );
 };
 
-const StatDisplay = ({ label, val }: { label: string, val: string | number }) => {
-    let displayVal = val;
-    let rank = '';
-    if (typeof val === 'number') {
-        if (val >= 900) rank = 'S'; else if (val >= 800) rank = 'A'; else if (val >= 600) rank = 'B'; else if (val >= 400) rank = 'C'; else if (val >= 200) rank = 'D'; else if (val >= 100) rank = 'E'; else rank = 'I';
-        displayVal = val;
-    }
-    return (
-        <div className="flex justify-between items-center border-b border-zinc-800 pb-1 mr-2">
-            <span className="text-zinc-500">{label}</span>
-            <div className="flex gap-2">
-                <span className="text-white font-bold">{displayVal}</span>
-                {rank && <span className="text-yellow-500 font-bold">{rank}</span>}
-            </div>
-        </div>
-    );
-};

@@ -30,6 +30,8 @@ export const createNewGameState = (
     let initialTasks: Task[] = [];
     let initialNews: string[] = [];
     let initialRumors: { 主题: string; 传播度: number }[] = [];
+    let phoneBattery = 100;
+    let phoneSignal = 4;
     
     // Common Item: Phone
     const phoneItem: InventoryItem = {
@@ -94,6 +96,8 @@ export const createNewGameState = (
         // 设定：旅途花费了大部分积蓄，装备老旧。状态正常。
         startValis = 100; // 仅够一晚廉价住宿
         totalHp = 300;
+        phoneBattery = 70;
+        phoneSignal = 3;
 
         initialInventory = [
             phoneItem,
@@ -115,6 +119,8 @@ export const createNewGameState = (
         // 设定：身无分文抵达欧拉丽。装备损坏，身体疲惫饥饿。无特殊背景，就是纯粹的穷困潦倒。
         startValis = 0;
         totalHp = 200; // 身体虚弱
+        phoneBattery = 5;
+        phoneSignal = 3;
 
         initialInventory = [
             { ...phoneItem, 描述: '屏幕有裂痕，电量不足。', 品质: 'Broken' },
@@ -239,7 +245,6 @@ export const createNewGameState = (
             状态: []
         },
         日志: [
-            { id: 'Log_Sys', text: `系统: 终端启动中... 信号强度: 3格(良好)... 难度模式: ${difficulty}`, sender: 'system', timestamp: Date.now(), turnIndex: 0 },
             { id: 'Log_Intro', text: introText, sender: '旁白', timestamp: Date.now() + 100, turnIndex: 0 }
         ],
         游戏时间: "第1日 07:00",
@@ -258,6 +263,7 @@ export const createNewGameState = (
         社交: [],
         短信: initialMessages,
         动态: initialMoments,
+        魔石通讯终端: { 电量: phoneBattery, 当前信号: phoneSignal },
         
         地图: worldMap,
 
@@ -266,6 +272,13 @@ export const createNewGameState = (
             眷族声望: 50, 
             头条新闻: initialNews, 
             街头传闻: initialRumors,
+            诸神神会: {
+                下次神会开启时间: "第3日 20:00",
+                神会主题: "升格者称号授予",
+                讨论内容: [],
+                最终结果: "待议"
+            },
+            NPC后台跟踪: [],
             下次更新: "第1日 12:00"
         },
         任务: initialTasks,

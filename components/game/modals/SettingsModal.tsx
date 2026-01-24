@@ -48,9 +48,10 @@ interface SettingsModalProps {
   onExitGame: () => void;
   gameState: GameState;
   onUpdateGameState: (newState: GameState) => void;
+  initialView?: SettingsView;
 }
 
-type SettingsView = 'MAIN' | 'PROMPTS' | 'VISUALS' | 'DATA' | 'AI_SERVICES' | 'VARIABLES' | 'MEMORY' | 'SCHEMA' | 'AI_CONTEXT' | 'STORAGE';
+type SettingsView = 'MAIN' | 'PROMPTS' | 'VISUALS' | 'DATA' | 'AI_SERVICES' | 'VARIABLES' | 'MEMORY' | 'SCHEMA' | 'AI_CONTEXT' | 'STORAGE' | 'FULL_LOGS';
 
 export const SettingsModal: React.FC<SettingsModalProps> = ({ 
   isOpen, 
@@ -63,7 +64,8 @@ export const SettingsModal: React.FC<SettingsModalProps> = ({
   onUpdateAvatar,
   onExitGame,
   gameState,
-  onUpdateGameState
+  onUpdateGameState,
+  initialView
 }) => {
   const [currentView, setCurrentView] = useState<SettingsView>('MAIN');
   const [formData, setFormData] = useState<AppSettings>(settings);
@@ -85,6 +87,7 @@ export const SettingsModal: React.FC<SettingsModalProps> = ({
 
   // Storage Management State
   const [storageItems, setStorageItems] = useState<{key: string, size: number, label: string, type: string}[]>([]);
+  const [logSearch, setLogSearch] = useState('');
 
   // File Import Ref
   const fileInputRef = useRef<HTMLInputElement>(null);
@@ -93,12 +96,11 @@ export const SettingsModal: React.FC<SettingsModalProps> = ({
   // Init Data
   useEffect(() => {
       if(isOpen) {
-          // Reset to main view on open
-          // setCurrentView('MAIN'); 
+          setCurrentView(initialView || 'MAIN');
           setFormData(settings); // Sync settings
           loadSaveSlots();
       }
-  }, [isOpen, settings]);
+  }, [isOpen, settings, initialView]);
 
   const loadSaveSlots = () => {
       // Manual Slots
@@ -428,6 +430,13 @@ export const SettingsModal: React.FC<SettingsModalProps> = ({
             color="border-yellow-500 hover:bg-yellow-500 hover:text-black text-black"
         />
         <MenuButton 
+            icon={<List />} 
+            label="完整对话流" 
+            subLabel="查看全部交互内容"
+            onClick={() => setCurrentView('FULL_LOGS')} 
+            color="border-slate-600 hover:bg-slate-800 hover:text-white text-black"
+        />
+        <MenuButton 
             icon={<HardDrive />} 
             label="存档管理" 
             subLabel="保存 / 读取 / 导出"
@@ -440,6 +449,17 @@ export const SettingsModal: React.FC<SettingsModalProps> = ({
             subLabel="清理缓存 / 重置数据"
             onClick={() => setCurrentView('STORAGE')} 
             color="border-red-500 hover:bg-red-600 hover:text-white text-black"
+        />
+        <MenuButton 
+            icon={<LogOut />} 
+            label="返回标题" 
+            subLabel="退出到主菜单"
+            onClick={() => {
+                if (confirm("返回标题将结束当前游戏进度，未保存的内容将丢失。确定继续？")) {
+                    onExitGame();
+                }
+            }} 
+            color="border-black hover:bg-black hover:text-white text-black"
         />
         <div className="col-span-full mt-4 md:mt-8 flex justify-end pb-4">
             <button 
@@ -748,7 +768,7 @@ export const SettingsModal: React.FC<SettingsModalProps> = ({
         <div className="space-y-6 animate-in slide-in-from-right-8 duration-300 h-full flex flex-col">
             <SectionHeader title="变量调试" icon={<Database />} />
             <div className="flex flex-col md:flex-row gap-4 mb-4">
-                <P5Dropdown label="选择数据模块" options={[{ label: '角色 (Character)', value: '角色' }, { label: '背包 (Inventory)', value: '背包' }, { label: '世界 (World)', value: '世界' }, { label: '社交 (Social)', value: '社交' }, { label: '任务 (Tasks)', value: '任务' }, { label: '剧情 (Story)', value: '剧情' }, { label: '眷族 (Familia)', value: '眷族' }, { label: '战斗 (Combat)', value: '战斗' }, { label: '公共战利品 (Public Loot)', value: '公共战利品' }, { label: '短信 (Messages)', value: '短信' }, { label: '动态 (Moments)', value: '动态' }, { label: '记忆 (Memory)', value: '记忆' }, { label: '地图 (Map)', value: '地图' }]} value={variableCategory} onChange={(val) => setVariableCategory(val)} className="w-full md:w-64" />
+                <P5Dropdown label="选择数据模块" options={[{ label: '角色 (Character)', value: '角色' }, { label: '背包 (Inventory)', value: '背包' }, { label: '世界 (World)', value: '世界' }, { label: '社交 (Social)', value: '社交' }, { label: '任务 (Tasks)', value: '任务' }, { label: '剧情 (Story)', value: '剧情' }, { label: '眷族 (Familia)', value: '眷族' }, { label: '战斗 (Combat)', value: '战斗' }, { label: '战利品仓库 (Archived Loot)', value: '战利品' }, { label: '公共战利品 (Public Loot)', value: '公共战利品' }, { label: '短信 (Messages)', value: '短信' }, { label: '动态 (Moments)', value: '动态' }, { label: '记忆 (Memory)', value: '记忆' }, { label: '地图 (Map)', value: '地图' }]} value={variableCategory} onChange={(val) => setVariableCategory(val)} className="w-full md:w-64" />
                 <div className="flex-1 flex items-end justify-end"><button onClick={() => { try { const parsed = JSON.parse(jsonEditText); onUpdateGameState({ ...gameState, [variableCategory]: parsed }); setJsonError(null); alert("变量已更新"); } catch (e: any) { setJsonError(e.message); } }} className="w-full md:w-auto bg-red-600 text-white px-6 py-3 font-bold uppercase hover:bg-red-50 shadow-[4px_4px_0_#000]"><Save className="inline mr-2" size={18} /> 应用修改</button></div>
             </div>
             <div className="flex-1 border-2 border-black bg-zinc-900 relative"><textarea value={jsonEditText} onChange={(e) => setJsonEditText(e.target.value)} className="w-full h-full bg-zinc-900 text-green-500 font-mono text-xs p-4 outline-none resize-none custom-scrollbar" spellCheck="false" />{jsonError && <div className="absolute bottom-0 left-0 w-full bg-red-900/90 text-white p-2 text-xs font-mono">ERROR: {jsonError}</div>}</div>
@@ -923,6 +943,44 @@ export const SettingsModal: React.FC<SettingsModalProps> = ({
       </div>
   );
 
+  const renderFullLogsView = () => {
+      const keyword = logSearch.trim().toLowerCase();
+      const visibleLogs = gameState.日志.filter(log => {
+          if (!keyword) return true;
+          return `${log.sender} ${log.text}`.toLowerCase().includes(keyword);
+      });
+      return (
+          <div className="space-y-6 animate-in slide-in-from-right-8 duration-300 h-full flex flex-col">
+              <SectionHeader title="完整对话流" icon={<List />} />
+              <div className="px-6 md:px-0">
+                  <input
+                      value={logSearch}
+                      onChange={(e) => setLogSearch(e.target.value)}
+                      placeholder="搜索：角色名 / 关键词..."
+                      className="w-full md:w-96 bg-white border border-zinc-300 px-3 py-2 text-xs font-mono outline-none focus:border-black"
+                  />
+              </div>
+              <div className="flex-1 overflow-y-auto custom-scrollbar p-6 md:p-0">
+                  <div className="space-y-3">
+                      {visibleLogs.length > 0 ? visibleLogs.map((log, idx) => (
+                          <div key={log.id || idx} className="bg-white border border-zinc-200 p-4 shadow-sm">
+                              <div className="flex justify-between items-center text-[10px] text-zinc-500 uppercase font-mono mb-2">
+                                  <span>{log.sender || 'Unknown'}</span>
+                                  <span>{log.gameTime || (log.turnIndex !== undefined ? `Turn ${log.turnIndex}` : 'No Time')}</span>
+                              </div>
+                              <div className="text-xs text-zinc-800 whitespace-pre-wrap leading-relaxed">
+                                  {log.text}
+                              </div>
+                          </div>
+                      )) : (
+                          <div className="text-zinc-400 text-xs italic text-center py-10">暂无记录</div>
+                      )}
+                  </div>
+              </div>
+          </div>
+      );
+  };
+
   return (
     <div className="absolute inset-0 z-50 flex items-center justify-center bg-black/90 backdrop-blur-md p-0 md:p-4 animate-in fade-in duration-300">
       <div className="w-full max-w-6xl h-full md:h-[90vh] bg-zinc-100 relative shadow-2xl overflow-hidden flex flex-col md:flex-row md:border-4 md:border-black">
@@ -967,6 +1025,7 @@ export const SettingsModal: React.FC<SettingsModalProps> = ({
                 {currentView === 'VARIABLES' && renderVariablesView()}
                 {currentView === 'MEMORY' && renderMemoryView()}
                 {currentView === 'SCHEMA' && renderSchemaView()}
+                {currentView === 'FULL_LOGS' && renderFullLogsView()}
                 {currentView === 'AI_CONTEXT' && (
                     <SettingsContext 
                         settings={formData} 

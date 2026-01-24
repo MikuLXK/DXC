@@ -1,6 +1,6 @@
 
 import React from 'react';
-import { Briefcase, Users, ClipboardList, Zap, Settings, Navigation, Smartphone, Globe, Shield, BookOpen, Scroll, Flag, Gem, Brain, Radar, Swords } from 'lucide-react';
+import { Briefcase, Users, ClipboardList, Zap, Settings, Navigation, Smartphone, Globe, Shield, BookOpen, Scroll, Flag, Gem, Brain, Radar, Swords, Archive, HardDrive } from 'lucide-react';
 import { MenuButton } from './right/MenuButton';
 
 interface RightPanelProps {
@@ -17,10 +17,13 @@ interface RightPanelProps {
     onOpenStory: () => void;
     onOpenContract: () => void;
     onOpenLoot: () => void;
+    onOpenLootVault: () => void;
+    onOpenSaveManager: () => void;
     onOpenMemory: () => void;
     onOpenPresent?: () => void;
     onOpenParty?: () => void;
     isHellMode?: boolean;
+    hasPhone?: boolean;
 }
 
 export const RightPanel: React.FC<RightPanelProps> = ({ 
@@ -37,10 +40,13 @@ export const RightPanel: React.FC<RightPanelProps> = ({
     onOpenStory,
     onOpenContract,
     onOpenLoot,
+    onOpenLootVault,
+    onOpenSaveManager,
     onOpenMemory,
     onOpenPresent,
     onOpenParty,
-    isHellMode
+    isHellMode,
+    hasPhone = true
 }) => {
   // Theme Overrides
   const bgTexture = isHellMode ? 'bg-red-900/10' : 'bg-halftone-blue opacity-10';
@@ -64,6 +70,14 @@ export const RightPanel: React.FC<RightPanelProps> = ({
                 colorClass="bg-zinc-800"
                 hoverColorClass={`${primaryHover} group-hover:border-white`}
                 onClick={onOpenInventory}
+            />
+            <MenuButton 
+                label="战利品仓库" 
+                icon={<Archive className="w-5 h-5 lg:w-5 lg:h-5" />} 
+                delay={70} 
+                colorClass="bg-zinc-800"
+                hoverColorClass="group-hover:bg-amber-500 group-hover:border-white"
+                onClick={onOpenLootVault}
             />
             <MenuButton 
                 label="公共战利品" 
@@ -129,6 +143,7 @@ export const RightPanel: React.FC<RightPanelProps> = ({
                 colorClass="bg-zinc-800"
                 hoverColorClass="group-hover:bg-orange-500 group-hover:border-white"
                 onClick={onOpenPhone}
+                disabled={!hasPhone}
             />
             <MenuButton 
                 label="世界" 
@@ -162,6 +177,14 @@ export const RightPanel: React.FC<RightPanelProps> = ({
                 colorClass="bg-zinc-800"
                 hoverColorClass="group-hover:bg-purple-500 group-hover:border-white"
                 onClick={onOpenTasks}
+            />
+            <MenuButton 
+                label="存档" 
+                icon={<HardDrive className="w-5 h-5 lg:w-5 lg:h-5" />} 
+                delay={470} 
+                colorClass="bg-zinc-800"
+                hoverColorClass="group-hover:bg-slate-600 group-hover:border-white"
+                onClick={onOpenSaveManager}
             />
              <div className="border-t border-zinc-700 my-2" />
              <MenuButton 

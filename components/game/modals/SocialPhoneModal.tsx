@@ -1,6 +1,6 @@
 
 import React, { useState, useEffect, useRef } from 'react';
-import { X, MessageCircle, Users, Send, BookUser, Camera, ChevronRight, Heart, MessageSquare, ArrowLeft, Plus, Check, Image as ImageIcon, RotateCcw, Lock } from 'lucide-react';
+import { X, MessageCircle, Users, Send, BookUser, Camera, ChevronRight, Heart, MessageSquare, ArrowLeft, Plus, Check, Image as ImageIcon, RotateCcw, Lock, Battery, Signal } from 'lucide-react';
 import { PhoneMessage, Confidant, MomentPost } from '../../../types';
 import { getAvatarColor } from '../../../utils/uiUtils';
 
@@ -10,6 +10,8 @@ interface SocialPhoneModalProps {
   messages: PhoneMessage[];
   contacts: Confidant[]; 
   moments: MomentPost[];
+  phoneState?: { 电量?: number; 当前信号?: number };
+  hasPhone?: boolean;
   initialTab?: 'CHAT' | 'CONTACTS' | 'MOMENTS';
   onSendMessage: (text: string, channel: 'private' | 'group', target?: string) => void;
   onCreateGroup: (name: string, members: string[]) => void;
@@ -26,6 +28,8 @@ export const SocialPhoneModal: React.FC<SocialPhoneModalProps> = ({
     messages = [], 
     contacts = [], 
     moments = [],
+    phoneState,
+    hasPhone = true,
     initialTab = 'CHAT',
     onSendMessage,
     onCreateGroup,
@@ -63,6 +67,11 @@ export const SocialPhoneModal: React.FC<SocialPhoneModalProps> = ({
   }, [isOpen, initialTab]);
 
   if (!isOpen) return null;
+  const phoneLocked = !hasPhone;
+  const batteryValue = typeof phoneState?.电量 === 'number' ? Math.max(0, Math.min(100, phoneState!.电量)) : null;
+  const signalValue = typeof phoneState?.当前信号 === 'number' ? Math.max(0, Math.min(4, phoneState!.当前信号)) : null;
+  const batteryColor = batteryValue === null ? 'text-zinc-300' : batteryValue <= 10 ? 'text-red-300' : batteryValue <= 30 ? 'text-yellow-300' : 'text-emerald-300';
+  const signalColor = signalValue === null ? 'text-zinc-300' : signalValue <= 1 ? 'text-red-300' : signalValue <= 2 ? 'text-yellow-300' : 'text-emerald-300';
 
   const formatDay = (timestamp?: string) => {
       if (!timestamp) return '';
@@ -80,6 +89,7 @@ export const SocialPhoneModal: React.FC<SocialPhoneModalProps> = ({
   const validContacts = contacts.filter(c => c.已交换联系方式);
 
   const handleTabChange = (tab: PhoneTab) => {
+      if (phoneLocked) return;
       setActiveTab(tab);
       setViewingChatTarget(null);
       setViewingContact(null);
@@ -258,7 +268,17 @@ export const SocialPhoneModal: React.FC<SocialPhoneModalProps> = ({
                 </h2>
             )}
             
-            <div className="flex gap-4">
+            <div className="flex items-center gap-4">
+                <div className="flex items-center gap-3 text-[10px] uppercase tracking-widest font-mono text-white/80">
+                    <div className={`flex items-center gap-1 ${batteryColor}`}>
+                        <Battery size={14} />
+                        <span>{batteryValue === null ? '??' : `${batteryValue}%`}</span>
+                    </div>
+                    <div className={`flex items-center gap-1 ${signalColor}`}>
+                        <Signal size={14} />
+                        <span>{signalValue === null ? '??' : `${signalValue}/4`}</span>
+                    </div>
+                </div>
                 {viewingChatTarget && onReroll && (
                     <button onClick={onReroll} title="Reroll Response">
                         <RotateCcw size={20} />
@@ -278,6 +298,15 @@ export const SocialPhoneModal: React.FC<SocialPhoneModalProps> = ({
         )}
 
         <div className="flex-1 bg-white relative overflow-hidden flex flex-col">
+             {phoneLocked && (
+                 <div className="absolute inset-0 z-40 bg-black/90 text-white flex flex-col items-center justify-center gap-4 p-6 text-center">
+                     <Lock size={36} className="text-blue-400" />
+                     <div className="text-lg font-display uppercase tracking-widest">终端未接入</div>
+                     <div className="text-xs text-zinc-400 leading-relaxed">
+                         背包内未找到魔石通讯终端。请在物品中携带该设备以启用手机功能。
+                     </div>
+                 </div>
+             )}
              
              {activeTab === 'CHAT' && (
                  isCreatingGroup ? (
@@ -385,13 +414,19 @@ export const SocialPhoneModal: React.FC<SocialPhoneModalProps> = ({
                              <h3 className="text-3xl font-display uppercase italic tracking-tighter text-black mb-1">{viewingContact.姓名}</h3>
                              <span className="bg-black text-white px-2 py-1 text-[10px] font-mono uppercase">{viewingContact.眷族}</span>
                              
-                             <div className="mt-6 space-y-4">
-                                 <InfoBlock label="INFO" content={viewingContact.简介 || "暂无信息"} />
-                                 <div className="grid grid-cols-2 gap-4">
-                                     <InfoBlock label="RACE" content={viewingContact.种族} />
-                                     <InfoBlock label="RELATION" content={viewingContact.关系状态} />
-                                 </div>
+                         <div className="mt-6 space-y-4">
+                             <InfoBlock label="INFO" content={viewingContact.简介 || "暂无信息"} />
+                             <div className="grid grid-cols-2 gap-4">
+                                 <InfoBlock label="RACE" content={viewingContact.种族} />
+                                 <InfoBlock label="RELATION" content={viewingContact.关系状态} />
                              </div>
+                             <div className="grid grid-cols-2 gap-4">
+                                 <InfoBlock label="TITLE" content={viewingContact.称号 || "无"} />
+                                 <InfoBlock label="ROLE" content={`${viewingContact.身份 || '未知'} / ${viewingContact.眷族 || '无眷族'}`} />
+                             </div>
+                             <InfoBlock label="ACTION" content={viewingContact.当前行动 || "暂无行动"} />
+                             <InfoBlock label="LOCATION" content={viewingContact.位置详情 || (viewingContact.坐标 ? `坐标 ${Math.round(viewingContact.坐标.x)}, ${Math.round(viewingContact.坐标.y)}` : "未知")} />
+                         </div>
                              
                              <div className="mt-6 flex gap-2 pb-6">
                                 <button 

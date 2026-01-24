@@ -1,6 +1,6 @@
 
 import React, { useState } from 'react';
-import { CharacterStats, InventoryItem, BodyPartStats, Difficulty } from '../../types';
+import { CharacterStats, InventoryItem, BodyPartStats, Difficulty, StatusEffect } from '../../types';
 import { Sword, Shield, Shirt, Footprints, Battery, Activity, Star, AlertTriangle, Sparkles, Skull, Coins, Zap, Heart, Droplets, Utensils, Hand, User, Scan } from 'lucide-react';
 import { VitalBar, StatRow } from './left/LeftPanelComponents';
 
@@ -49,8 +49,52 @@ const SimpleEquipSlot = ({ label, slotKey, stats, icon }: { label: string, slotK
                     <span className="text-[9px] text-zinc-500 font-bold uppercase">{label}</span>
                 </div>
                 <div className={`text-xs truncate ${itemName ? 'text-white' : 'text-zinc-700 italic'}`}>
-                    {itemName || "EMPTY"}
+                    {itemName || "未装备"}
                 </div>
+            </div>
+        </div>
+    );
+};
+
+const normalizeStatus = (entry: StatusEffect | string): StatusEffect => {
+    if (typeof entry === 'string') {
+        return { 名称: entry, 类型: 'Buff', 效果: '', 持续时间: '' };
+    }
+    return entry;
+};
+
+const StatusBadge = ({ entry, variant }: { entry: StatusEffect | string; variant: 'buff' | 'curse' }) => {
+    const status = normalizeStatus(entry);
+    const isBuff = status.类型 === 'Buff';
+    const badgeColor = variant === 'curse'
+        ? 'bg-red-900/30 text-red-300 border-red-800'
+        : isBuff
+            ? 'bg-emerald-900/30 text-emerald-300 border-emerald-800'
+            : 'bg-amber-900/30 text-amber-300 border-amber-800';
+    const tooltipBorder = variant === 'curse' ? 'border-red-800' : isBuff ? 'border-emerald-700' : 'border-amber-700';
+    const icon = variant === 'curse' ? <Skull size={10} /> : <Sparkles size={10} />;
+
+    return (
+        <div className="relative group">
+            <div className={`text-[10px] px-2 py-0.5 rounded flex items-center gap-1 border ${badgeColor}`}>
+                {icon} {status.名称}
+            </div>
+            <div className={`absolute left-0 top-full mt-2 w-56 bg-black/95 border ${tooltipBorder} p-2 text-[10px] text-zinc-300 shadow-xl opacity-0 pointer-events-none group-hover:opacity-100 transition-opacity`}>
+                <div className="text-white font-bold text-[11px] mb-1">{status.名称}</div>
+                <div className="flex justify-between text-[9px] text-zinc-400 mb-1">
+                    <span>类型</span>
+                    <span className={isBuff ? 'text-emerald-300' : 'text-amber-300'}>{status.类型}</span>
+                </div>
+                {status.效果 && (
+                    <div className="text-[10px] text-zinc-200 mb-1">
+                        <span className="text-zinc-500">效果: </span>{status.效果}
+                    </div>
+                )}
+                {status.持续时间 && (
+                    <div className="text-[10px] text-zinc-200">
+                        <span className="text-zinc-500">持续: </span>{status.持续时间}
+                    </div>
+                )}
             </div>
         </div>
     );
@@ -262,30 +306,29 @@ export const LeftPanel: React.FC<LeftPanelProps> = ({ stats, className = '', isH
           {(stats.状态?.length > 0 || stats.诅咒?.length > 0) && (
               <div className="flex gap-2 flex-wrap">
                   {stats.状态?.map((b, i) => (
-                      <span key={`b-${i}`} className={`text-[10px] ${bgColor} ${textSubColor} border ${subBorderColor} px-2 py-0.5 rounded flex items-center gap-1`}>
-                          <Sparkles size={8} /> {b}
-                      </span>
+                      <StatusBadge key={`b-${i}`} entry={b} variant="buff" />
                   ))}
                   {stats.诅咒?.map((c, i) => (
-                      <span key={`c-${i}`} className="text-[10px] bg-red-900/30 text-red-300 border border-red-800 px-2 py-0.5 rounded flex items-center gap-1">
-                          <Skull size={8} /> {c.名称}
-                      </span>
+                      <StatusBadge key={`c-${i}`} entry={c} variant="curse" />
                   ))}
               </div>
           )}
 
           {/* Equipment - Simplified List */}
           <div className="space-y-2 pb-4">
-              <h3 className="text-xs font-bold text-zinc-500 uppercase tracking-widest border-b border-zinc-800 pb-1">装备 (EQUIPMENT)</h3>
+              <h3 className="text-xs font-bold text-zinc-500 uppercase tracking-widest border-b border-zinc-800 pb-1">装备</h3>
               {stats.装备 && (
                   <div className="flex flex-col gap-1">
-                      <SimpleEquipSlot label="MAIN HAND" slotKey="主手" stats={stats} icon={<Sword size={12}/>} />
-                      <SimpleEquipSlot label="OFF HAND" slotKey="副手" stats={stats} icon={<Shield size={12}/>} />
-                      <SimpleEquipSlot label="BODY" slotKey="身体" stats={stats} icon={<Shirt size={12}/>} />
-                      <SimpleEquipSlot label="HEAD" slotKey="头部" stats={stats} icon={<User size={12}/>} />
-                      <SimpleEquipSlot label="LEGS" slotKey="腿部" stats={stats} icon={<User size={12}/>} />
-                      <SimpleEquipSlot label="FEET" slotKey="足部" stats={stats} icon={<Footprints size={12}/>} />
-                      <SimpleEquipSlot label="ACC 1" slotKey="饰品1" stats={stats} icon={<Star size={12}/>} />
+                      <SimpleEquipSlot label="主手" slotKey="主手" stats={stats} icon={<Sword size={12}/>} />
+                      <SimpleEquipSlot label="副手" slotKey="副手" stats={stats} icon={<Shield size={12}/>} />
+                      <SimpleEquipSlot label="头部" slotKey="头部" stats={stats} icon={<User size={12}/>} />
+                      <SimpleEquipSlot label="身体" slotKey="身体" stats={stats} icon={<Shirt size={12}/>} />
+                      <SimpleEquipSlot label="手部" slotKey="手部" stats={stats} icon={<Hand size={12}/>} />
+                      <SimpleEquipSlot label="腿部" slotKey="腿部" stats={stats} icon={<User size={12}/>} />
+                      <SimpleEquipSlot label="足部" slotKey="足部" stats={stats} icon={<Footprints size={12}/>} />
+                      <SimpleEquipSlot label="饰品1" slotKey="饰品1" stats={stats} icon={<Star size={12}/>} />
+                      <SimpleEquipSlot label="饰品2" slotKey="饰品2" stats={stats} icon={<Star size={12}/>} />
+                      <SimpleEquipSlot label="饰品3" slotKey="饰品3" stats={stats} icon={<Star size={12}/>} />
                   </div>
               )}
           </div>

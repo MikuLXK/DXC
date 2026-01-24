@@ -45,11 +45,13 @@ export const GameInput: React.FC<GameInputProps> = ({
 
     const handleSubmit = (e: React.FormEvent) => {
         e.preventDefault();
-        if (input.trim() && !isProcessing) {
-            onSendMessage(input);
-            setInput('');
-            if (setDraftInput) setDraftInput('');
-        }
+        if (isProcessing) return;
+        const hasCommands = commandQueue.length > 0;
+        if (!input.trim() && !hasCommands) return;
+        const safeInput = input.trim() ? input : '执行用户指令';
+        onSendMessage(safeInput);
+        setInput('');
+        if (setDraftInput) setDraftInput('');
     };
 
     const handleStop = (e: React.MouseEvent) => {
@@ -67,34 +69,54 @@ export const GameInput: React.FC<GameInputProps> = ({
         <div className="p-6 z-20 bg-gradient-to-t from-black via-zinc-900/90 to-transparent pt-4">
             
             {commandQueue.length > 0 && (
-                <div className="mb-2 flex flex-wrap gap-2 animate-in slide-in-from-bottom-2">
-                    {commandQueue.map(cmd => (
-                        <div key={cmd.id} className="bg-zinc-800 border border-yellow-600 text-yellow-500 text-xs px-2 py-1 flex items-center gap-2 rounded">
-                            <Command size={10} />
-                            <span>{cmd.text}</span>
-                            <button 
-                                type="button"
-                                onClick={(e) => {
-                                    e.stopPropagation();
-                                    onRemoveCommand?.(cmd.id);
-                                }}
-                                className="hover:text-white"
-                            >
-                                <X size={12} />
-                            </button>
-                        </div>
-                    ))}
+                <div className="mb-3 animate-in slide-in-from-bottom-2">
+                    <div className="flex items-center gap-2 text-[10px] text-zinc-400 uppercase tracking-widest mb-2">
+                        <Command size={10} />
+                        用户指令
+                    </div>
+                    <div className="flex flex-wrap gap-2">
+                        {commandQueue.map(cmd => (
+                            <div key={cmd.id} className="bg-zinc-900 border border-amber-500/70 text-amber-300 text-xs px-2 py-1 flex items-center gap-2 rounded">
+                                <span>{cmd.text}</span>
+                                <button 
+                                    type="button"
+                                    onClick={(e) => {
+                                        e.stopPropagation();
+                                        onRemoveCommand?.(cmd.id);
+                                    }}
+                                    className="hover:text-white"
+                                >
+                                    <X size={12} />
+                                </button>
+                            </div>
+                        ))}
+                    </div>
                 </div>
             )}
 
             <form onSubmit={handleSubmit} className="relative group max-w-4xl mx-auto flex items-end gap-2">
+                {onReroll ? (
+                    <button
+                        type="button"
+                        onClick={!isProcessing ? onReroll : undefined}
+                        disabled={isProcessing}
+                        className={`bg-white text-black h-[60px] w-[100px] transform -skew-x-6 border-2 border-transparent transition-all flex items-center justify-center shadow-lg
+                            ${isProcessing 
+                                ? 'bg-zinc-800 text-zinc-500 border-zinc-700' 
+                                : `hover:border-white ${btnHover} hover:text-white`
+                            }
+                        `}
+                    >
+                        <div className="transform skew-x-6 font-display uppercase tracking-widest text-xs font-bold flex items-center gap-2">
+                            <RotateCcw size={14} /> REROLL
+                        </div>
+                    </button>
+                ) : (
+                    <div className="h-[60px] w-[100px]" />
+                )}
+
                 <div className="flex-1 relative">
-                    <div className="flex justify-between mb-2 opacity-50 hover:opacity-100 transition-opacity">
-                        {onReroll && !isProcessing && (
-                            <button type="button" onClick={onReroll} className="flex items-center gap-1 text-xs text-zinc-400 hover:text-white uppercase font-bold">
-                                <RotateCcw size={12} /> 重试 / Reroll
-                            </button>
-                        )}
+                    <div className="flex justify-end mb-2 opacity-50 hover:opacity-100 transition-opacity">
                         {isProcessing && (
                             <span className="text-xs text-blue-500 animate-pulse font-mono">
                                 AI IS GENERATING RESPONSE...

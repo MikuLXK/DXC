@@ -71,8 +71,8 @@ export const P_DATA_STRUCT = `# 【数据结构定义】DanMachi SaveData (V3.1 
 - \`gameState.角色.技能\`: Array<{ "id", "名称", "描述", "消耗", "属性", "稀有"(Bool) }>
 - \`gameState.角色.魔法\`: Array<{ "名称", "咏唱", "描述", "消耗" }>
 - \`gameState.角色.发展能力\`: Array<{ "名称", "等级", "描述" }>
-- \`gameState.角色.状态\`: String[] (Buff/Debuff 名称列表)
-- \`gameState.角色.诅咒\`: Array<{ "名称", "描述" }>
+- \`gameState.角色.状态\`: Array<{ "名称", "类型": "Buff" | "DeBuff", "效果", "持续时间" }>
+- \`gameState.角色.诅咒\`: Array<{ "名称", "类型": "Buff" | "DeBuff", "效果", "持续时间" }>
 
 **装备栏 (Equipment)**
 *值为物品名称字符串*
@@ -175,6 +175,7 @@ export const P_DATA_STRUCT = `# 【数据结构定义】DanMachi SaveData (V3.1 
 - \`日志\`: Array<{ "时间戳": String, "内容": String }>
 
 ## 8. 手机系统
+- \`gameState.魔石通讯终端\`: { "电量": Number (0-100), "当前信号": Number (0-4) }
 - \`gameState.短信\`: Array<{
     "id": String, "发送者": String, "目标": String,
     "内容": String, "频道": "private"|"group"|"forum", "群组名称": String,
@@ -191,6 +192,8 @@ export const P_DATA_STRUCT = `# 【数据结构定义】DanMachi SaveData (V3.1 
 - \`gameState.世界.眷族声望\`: Number
 - \`gameState.世界.头条新闻\`: String[]
 - \`gameState.世界.街头传闻\`: Array<{ "主题": String, "传播度": Number }>
+- \`gameState.世界.诸神神会\`: { "下次神会开启时间": String, "神会主题": String, "讨论内容": Array<{ "角色": String, "对话": String }>, "最终结果": String }
+- \`gameState.世界.NPC后台跟踪\`: Array<{ "NPC": String, "当前行动": String, "位置?": String, "进度?": String, "预计完成?": String }>
 - \`gameState.世界.下次更新\`: String
 
 ## 10. 地图系统 (gameState.地图)

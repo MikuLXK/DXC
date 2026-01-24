@@ -1,7 +1,7 @@
 
 import React, { useState, useRef, useEffect, useLayoutEffect } from 'react';
 import { LogEntry, CombatState, CharacterStats, Skill, InventoryItem, Confidant, ActionOption } from '../../types';
-import { MessageSquare, Sword, Eye, Loader2, ChevronRight, MousePointer2, Terminal } from 'lucide-react';
+import { MessageSquare, Sword, Eye, Loader2, ChevronRight, MousePointer2, Terminal, Layers, ChevronUp } from 'lucide-react';
 import { CombatPanel } from './CombatPanel';
 import { LogEntryItem } from './center/LogEntry';
 import { GameInput } from './center/GameInput';
@@ -78,6 +78,9 @@ export const CenterPanel: React.FC<CenterPanelProps> = ({
   const [editMode, setEditMode] = useState<'AI_RAW' | 'USER_TEXT'>('AI_RAW');
   const [jumpTarget, setJumpTarget] = useState('');
   const [jumpHint, setJumpHint] = useState('');
+  const [jumpExpanded, setJumpExpanded] = useState(false);
+  const [jumpFocused, setJumpFocused] = useState(false);
+  const jumpHideTimer = useRef<number | null>(null);
   
   // Refs for scrolling
   const endRef = useRef<HTMLDivElement>(null);
@@ -99,7 +102,13 @@ export const CenterPanel: React.FC<CenterPanelProps> = ({
   const actionBgHighlight = isHellMode ? 'bg-red-500/10' : 'bg-blue-500/10';
   const marqueeTextClass = isHellMode ? 'text-red-200' : 'text-white';
   const marqueeDuplicateClass = isHellMode ? 'text-red-300/70' : 'text-white/70';
-  const logPaddingClass = actionOptions.length > 0 ? 'pb-48 md:pb-48' : 'pb-12 md:pb-16';
+  const showCombatShortcut = combatState.是否战斗中 && enableCombatUI && !isProcessing;
+  const showQuickActions = !isProcessing && !combatState.是否战斗中 && actionOptions.length > 0;
+  const hasCommandQueue = commandQueue.length > 0;
+  const logPaddingClass = (showQuickActions || showCombatShortcut)
+      ? (hasCommandQueue ? 'pb-28 md:pb-60' : 'pb-20 md:pb-48')
+      : (hasCommandQueue ? 'pb-20 md:pb-32' : 'pb-6 md:pb-16');
+  const actionDockOffset = hasCommandQueue ? 'bottom-[9.5rem] md:bottom-[150px]' : 'bottom-[5.5rem] md:bottom-[95px]';
 
   const turnIndices = logs
       .map(l => (typeof l.turnIndex === 'number' ? l.turnIndex : null))
@@ -142,6 +151,7 @@ export const CenterPanel: React.FC<CenterPanelProps> = ({
       if (el) {
           el.scrollIntoView({ behavior: 'smooth', block: 'center' });
           setJumpHint(`已跳转: ${target}`);
+          setJumpExpanded(true);
       }
   };
 
@@ -172,6 +182,22 @@ export const CenterPanel: React.FC<CenterPanelProps> = ({
       prevLogsLength.current = logs.length;
       setJumpHint('');
   }, [isProcessing, isStreaming, logs, lastRawResponse]); 
+
+  useEffect(() => {
+      if (!jumpExpanded) return;
+      if (jumpFocused || jumpTarget) return;
+      if (jumpHideTimer.current) {
+          window.clearTimeout(jumpHideTimer.current);
+      }
+      jumpHideTimer.current = window.setTimeout(() => {
+          setJumpExpanded(false);
+      }, 3500);
+      return () => {
+          if (jumpHideTimer.current) {
+              window.clearTimeout(jumpHideTimer.current);
+          }
+      };
+  }, [jumpExpanded, jumpFocused, jumpTarget, jumpHint]);
 
   // Fix: Scroll to bottom when exiting combat UI
   useEffect(() => {
@@ -286,32 +312,58 @@ export const CenterPanel: React.FC<CenterPanelProps> = ({
       )}
 
       {totalTurns > 0 && (
-          <div className="absolute top-4 right-4 z-30 flex flex-col gap-2 bg-black/80 border border-zinc-700 px-3 py-2 text-[10px] text-zinc-300">
-              <div className="flex items-center gap-2">
-                  <span className="uppercase tracking-widest">楼层跳转</span>
-                  <span className="text-zinc-500">
-                      {visibleTurns[0]}-{visibleTurns[visibleTurns.length - 1]}/{orderedTurns[orderedTurns.length - 1]}
-                  </span>
-              </div>
-              <div className="flex items-center gap-2">
-                  <input
-                      type="number"
-                      min={orderedTurns[0] ?? 0}
-                      max={orderedTurns[orderedTurns.length - 1] ?? 0}
-                      value={jumpTarget}
-                      onChange={(e) => setJumpTarget(e.target.value)}
-                      onKeyDown={(e) => e.key === 'Enter' && handleJump()}
-                      className="w-16 bg-zinc-900 border border-zinc-700 text-zinc-200 px-2 py-1 text-[10px] font-mono outline-none"
-                      placeholder="楼层"
-                  />
-                  <button
-                      onClick={handleJump}
-                      className="px-2 py-1 bg-blue-600 text-white text-[10px] uppercase tracking-widest hover:bg-blue-500"
+          <div className="absolute top-4 right-4 z-30">
+              {jumpExpanded ? (
+                  <div
+                      onMouseEnter={() => setJumpExpanded(true)}
+                      className="flex flex-col gap-2 bg-black/80 border border-zinc-700 px-3 py-2 text-[10px] text-zinc-300 shadow-lg"
                   >
-                      跳转
+                      <div className="flex items-center justify-between gap-2">
+                          <div className="flex items-center gap-2">
+                              <span className="uppercase tracking-widest">楼层跳转</span>
+                              <span className="text-zinc-500">
+                                  {visibleTurns[0]}-{visibleTurns[visibleTurns.length - 1]}/{orderedTurns[orderedTurns.length - 1]}
+                              </span>
+                          </div>
+                          <button
+                              onClick={() => setJumpExpanded(false)}
+                              className="text-zinc-500 hover:text-white"
+                              title="自动隐藏"
+                          >
+                              <ChevronUp size={12} />
+                          </button>
+                      </div>
+                      <div className="flex items-center gap-2">
+                          <input
+                              type="number"
+                              min={orderedTurns[0] ?? 0}
+                              max={orderedTurns[orderedTurns.length - 1] ?? 0}
+                              value={jumpTarget}
+                              onChange={(e) => setJumpTarget(e.target.value)}
+                              onFocus={() => setJumpFocused(true)}
+                              onBlur={() => setJumpFocused(false)}
+                              onKeyDown={(e) => e.key === 'Enter' && handleJump()}
+                              className="w-16 bg-zinc-900 border border-zinc-700 text-zinc-200 px-2 py-1 text-[10px] font-mono outline-none"
+                              placeholder="楼层"
+                          />
+                          <button
+                              onClick={handleJump}
+                              className="px-2 py-1 bg-blue-600 text-white text-[10px] uppercase tracking-widest hover:bg-blue-500"
+                          >
+                              跳转
+                          </button>
+                      </div>
+                      {jumpHint && <div className="text-[10px] text-zinc-500">{jumpHint}</div>}
+                  </div>
+              ) : (
+                  <button
+                      onClick={() => setJumpExpanded(true)}
+                      className="flex items-center gap-2 bg-black/80 border border-zinc-700 px-3 py-2 text-[10px] text-zinc-300 hover:text-white hover:border-blue-500"
+                  >
+                      <Layers size={12} className="text-blue-400" />
+                      楼层跳转
                   </button>
-              </div>
-              {jumpHint && <div className="text-[10px] text-zinc-500">{jumpHint}</div>}
+              )}
           </div>
       )}
 
@@ -364,59 +416,58 @@ export const CenterPanel: React.FC<CenterPanelProps> = ({
         <div ref={endRef} />
       </div>
 
-      {/* Combat Entrance Button (Floating above Input) */}
-      {combatState.是否战斗中 && enableCombatUI && !isProcessing && (
-          <div className="absolute bottom-32 md:bottom-28 left-0 w-full z-30 px-4 md:px-10 pb-4 flex justify-center pointer-events-none">
-              <button 
-                type="button"
-                onClick={() => setShowCombatUI(true)}
-                className="pointer-events-auto bg-red-600 text-white border-2 border-white px-8 py-3 font-display text-xl uppercase tracking-widest hover:scale-105 transition-transform flex items-center gap-3 shadow-[0_0_25px_red] animate-pulse"
-              >
-                  <Sword size={24} /> ⚔️ 进入战斗面板
-              </button>
-          </div>
-      )}
-
-      {/* Action Options Area - Enhanced for Mobile Visibility */}
-      {!isProcessing && !combatState.是否战斗中 && actionOptions.length > 0 && (
-          // Modified positioning: Increased bottom value significantly for mobile
-          <div className="absolute bottom-[7rem] md:bottom-[95px] left-0 w-full z-50 pointer-events-none">
-              <div className="w-full flex flex-col justify-end pointer-events-auto">
-                  {/* Gradient Fade to visually separate from logs */}
-                  <div className="w-full h-8 bg-gradient-to-t from-zinc-900/90 to-transparent pointer-events-none" />
-                  
-                  <div className="flex gap-3 overflow-x-auto px-4 pb-3 custom-scrollbar snap-x touch-pan-x items-end bg-zinc-900/80 backdrop-blur-sm">
-                      {actionOptions.map((opt, idx) => {
-                          const shouldMarquee = opt.length > 12;
-                          return (
-                          <button
-                              key={idx}
-                              onClick={() => {
-                                  if (setDraftInput) setDraftInput(opt);
-                              }}
-                              className={`flex-shrink-0 snap-start bg-zinc-950/95 border text-left p-3 min-w-[140px] max-w-[220px] group transition-all transform active:scale-95 relative overflow-hidden shadow-lg rounded-sm ${actionBorder}`}
+      {(showCombatShortcut || showQuickActions) && (
+          <div className={`absolute ${actionDockOffset} left-0 w-full z-50 pointer-events-none`}>
+              <div className="w-full flex flex-col justify-end gap-3 pointer-events-auto">
+                  {showCombatShortcut && (
+                      <div className="flex justify-center px-4 md:px-10">
+                          <button 
+                            type="button"
+                            onClick={() => setShowCombatUI(true)}
+                            className="bg-red-600 text-white border-2 border-white px-6 py-2 font-display text-base md:text-xl uppercase tracking-widest hover:scale-105 transition-transform flex items-center gap-2 shadow-[0_0_25px_red] animate-pulse"
                           >
-                              <div className={`absolute inset-0 opacity-0 group-hover:opacity-100 transition-opacity ${actionBgHighlight}`} />
-                              <div className="flex items-center gap-2 mb-1">
-                                  <MousePointer2 size={14} className={`${actionIcon} shrink-0`} />
-                                  <div className="relative overflow-hidden w-full">
-                                      <div className={`flex w-max items-center gap-6 ${shouldMarquee ? 'action-option-marquee' : ''}`}>
-                                          <span className={`font-bold text-xs md:text-sm whitespace-nowrap leading-tight ${marqueeTextClass}`}>
-                                              {opt}
-                                          </span>
-                                          {shouldMarquee && (
-                                              <span className={`font-bold text-xs md:text-sm whitespace-nowrap leading-tight ${marqueeDuplicateClass}`}>
-                                                  {opt}
-                                              </span>
-                                          )}
-                                      </div>
-                                  </div>
-                              </div>
-                              <ChevronRight size={14} className={`absolute bottom-1 right-1 opacity-50 group-hover:opacity-100 transition-all ${actionChevron}`} />
+                              <Sword size={20} /> 进入战斗面板
                           </button>
-                      )})}
-                      <div className="w-4 flex-shrink-0" />
-                  </div>
+                      </div>
+                  )}
+
+                  {showQuickActions && (
+                      <>
+                          <div className="w-full h-8 bg-gradient-to-t from-zinc-900/90 to-transparent pointer-events-none" />
+                          <div className="flex gap-3 overflow-x-auto px-4 pb-3 custom-scrollbar snap-x touch-pan-x items-end bg-zinc-900/80 backdrop-blur-sm">
+                              {actionOptions.map((opt, idx) => {
+                                  const shouldMarquee = opt.length > 12;
+                                  return (
+                                  <button
+                                      key={idx}
+                                      onClick={() => {
+                                          if (setDraftInput) setDraftInput(opt);
+                                      }}
+                                      className={`flex-shrink-0 snap-start bg-zinc-950/95 border text-left p-3 min-w-[140px] max-w-[220px] group transition-all transform active:scale-95 relative overflow-hidden shadow-lg rounded-sm ${actionBorder}`}
+                                  >
+                                      <div className={`absolute inset-0 opacity-0 group-hover:opacity-100 transition-opacity ${actionBgHighlight}`} />
+                                      <div className="flex items-center gap-2 mb-1">
+                                          <MousePointer2 size={14} className={`${actionIcon} shrink-0`} />
+                                          <div className="relative overflow-hidden w-full">
+                                              <div className={`flex w-max items-center gap-6 ${shouldMarquee ? 'action-option-marquee' : ''}`}>
+                                                  <span className={`font-bold text-xs md:text-sm whitespace-nowrap leading-tight ${marqueeTextClass}`}>
+                                                      {opt}
+                                                  </span>
+                                                  {shouldMarquee && (
+                                                      <span className={`font-bold text-xs md:text-sm whitespace-nowrap leading-tight ${marqueeDuplicateClass}`}>
+                                                          {opt}
+                                                      </span>
+                                                  )}
+                                              </div>
+                                          </div>
+                                      </div>
+                                      <ChevronRight size={14} className={`absolute bottom-1 right-1 opacity-50 group-hover:opacity-100 transition-all ${actionChevron}`} />
+                                  </button>
+                              )})}
+                              <div className="w-4 flex-shrink-0" />
+                          </div>
+                      </>
+                  )}
               </div>
               <style>{`
                 @keyframes actionOptionMarquee {

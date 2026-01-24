@@ -1,6 +1,6 @@
 
-import React, { useState } from 'react';
-import { GameState, Difficulty } from '../types';
+import React, { useMemo, useState } from 'react';
+import { GameState, Difficulty, InventoryItem } from '../types';
 import { TopNav } from './game/TopNav';
 import { LeftPanel } from './game/LeftPanel';
 import { CenterPanel } from './game/CenterPanel';
@@ -15,6 +15,7 @@ import { MobileMapView } from './mobile/MobileMapView'; // Import MobileMapView
 // Modals
 import { InventoryModal } from './game/modals/InventoryModal';
 import { SettingsModal } from './game/modals/SettingsModal';
+import { SaveManagerModal } from './game/modals/SaveManagerModal';
 import { EquipmentModal } from './game/modals/EquipmentModal';
 import { SocialModal } from './game/modals/SocialModal';
 import { SocialPhoneModal } from './game/modals/SocialPhoneModal';
@@ -23,6 +24,7 @@ import { SkillsModal } from './game/modals/SkillsModal';
 import { StoryModal } from './game/modals/StoryModal';
 import { ContractModal } from './game/modals/ContractModal';
 import { LootModal } from './game/modals/LootModal';
+import { LootVaultModal } from './game/modals/LootVaultModal';
 import { FamiliaModal } from './game/modals/FamiliaModal';
 import { PresentCharactersModal } from './game/modals/PresentCharactersModal';
 import { PartyModal } from './game/modals/PartyModal';
@@ -42,11 +44,11 @@ export const GameInterface: React.FC<GameInterfaceProps> = ({ onExit, initialSta
   const {
       gameState, setGameState,
       settings, saveSettings,
-      commandQueue, addToQueue, removeFromQueue,
+      commandQueue, pendingCommands, addToQueue, removeFromQueue,
       currentOptions, lastAIResponse, isProcessing, isStreaming,
       draftInput, setDraftInput,
       memorySummaryState, confirmMemorySummary, applyMemorySummary, cancelMemorySummary,
-      handlePlayerAction, handleSendMessage, handleCreateMoment, handleSilentWorldUpdate,
+      handlePlayerAction, handlePlayerInput, handleSendMessage, handleCreateMoment, handleSilentWorldUpdate,
       stopInteraction, handleEditLog, handleDeleteLog, handleEditUserLog, handleUpdateLogText, handleUserRewrite,
       manualSave, loadGame, handleReroll, handleDeleteTask
   } = useGameLogic(initialState, onExit);
@@ -54,8 +56,13 @@ export const GameInterface: React.FC<GameInterfaceProps> = ({ onExit, initialSta
   // Modal States
   const [activeModal, setActiveModal] = useState<string | null>(null);
   const [mobileActiveTab, setMobileActiveTab] = useState<'CHAT' | 'CHAR' | 'INV' | 'MAP' | 'MENU'>('CHAT');
+  const [settingsView, setSettingsView] = useState<string>('MAIN');
 
   const closeModal = () => setActiveModal(null);
+  const openSettings = (view: string = 'MAIN') => {
+      setSettingsView(view);
+      setActiveModal('SETTINGS');
+  };
 
   // Helper to handle commands that need to update state directly (like equipping)
   const handleUpdateConfidant = (id: string, updates: any) => {
@@ -63,11 +70,102 @@ export const GameInterface: React.FC<GameInterfaceProps> = ({ onExit, initialSta
       setGameState({ ...gameState, 社交: newConfidants });
   };
 
-  const handleEquipItem = (item: any) => {
-      // Simple frontend feedback, real logic should be AI driven or robust state update
+  const queueEquipItem = (item: InventoryItem) => {
+      const slotKey = item.装备槽位 || (item.类型 === 'weapon' ? '主手' : '身体');
+      addToQueue(`装备物品: ${item.名称}`, undefined, `equip_${slotKey}`, {
+          kind: 'EQUIP',
+          slotKey,
+          itemId: item.id,
+          itemName: item.名称
+      });
+  };
+
+  const queueUnequipItem = (slotKey: string, itemName?: string, itemId?: string) => {
+      addToQueue(`卸下装备: ${itemName || slotKey}`, undefined, `equip_${slotKey}`, {
+          kind: 'UNEQUIP',
+          slotKey,
+          itemId,
+          itemName
+      });
+  };
+
+  const queueUseItem = (item: InventoryItem) => {
+      addToQueue(`使用物品: ${item.名称}`, undefined, undefined, {
+          kind: 'USE',
+          itemId: item.id,
+          itemName: item.名称,
+          quantity: 1
+      });
+  };
+
+  const handleEquipItem = (item: InventoryItem) => {
+      queueEquipItem(item);
   };
 
   const isHellMode = gameState.游戏难度 === Difficulty.HELL;
+  const hasMagicPhone = (gameState.背包 || []).some(item => item.名称 === '魔石通讯终端');
+  const activeCommands = isProcessing ? pendingCommands : commandQueue;
+
+  const previewState = useMemo(() => {
+      if (!activeCommands || activeCommands.length === 0) return gameState;
+
+      const next = {
+          ...gameState,
+          角色: { ...gameState.角色, 装备: { ...(gameState.角色?.装备 || {}) } },
+          背包: Array.isArray(gameState.背包) ? gameState.背包.map(item => ({ ...item })) : []
+      };
+
+      const findItemIndex = (itemId?: string, itemName?: string) => {
+          if (itemId) {
+              const idx = next.背包.findIndex(i => i.id === itemId);
+              if (idx >= 0) return idx;
+          }
+          if (itemName) return next.背包.findIndex(i => i.名称 === itemName);
+          return -1;
+      };
+
+      const resolveSlotKey = (cmd: any, item?: any) => {
+          if (cmd.slotKey) return cmd.slotKey;
+          if (item?.装备槽位) return item.装备槽位;
+          if (item?.类型 === 'weapon') return '主手';
+          if (item?.类型 === 'armor') return '身体';
+          return '';
+      };
+
+      activeCommands.forEach((cmd: any) => {
+          if (cmd.kind === 'EQUIP') {
+              const idx = findItemIndex(cmd.itemId, cmd.itemName);
+              const item = idx >= 0 ? next.背包[idx] : null;
+              const slotKey = resolveSlotKey(cmd, item);
+              if (slotKey) {
+                  next.角色.装备[slotKey] = cmd.itemName || item?.名称 || next.角色.装备[slotKey];
+              }
+              if (item) {
+                  item.已装备 = true;
+                  if (slotKey) item.装备槽位 = slotKey;
+              }
+          } else if (cmd.kind === 'UNEQUIP') {
+              const slotKey = cmd.slotKey;
+              if (slotKey) next.角色.装备[slotKey] = '';
+              const idx = findItemIndex(cmd.itemId, cmd.itemName);
+              const item = idx >= 0 ? next.背包[idx] : null;
+              if (item) {
+                  item.已装备 = false;
+                  item.装备槽位 = undefined;
+              }
+          } else if (cmd.kind === 'USE') {
+              const idx = findItemIndex(cmd.itemId, cmd.itemName);
+              if (idx >= 0) {
+                  const item = next.背包[idx];
+                  const nextQty = (item.数量 || 1) - (cmd.quantity || 1);
+                  if (nextQty <= 0) next.背包.splice(idx, 1);
+                  else item.数量 = nextQty;
+              }
+          }
+      });
+
+      return next;
+  }, [gameState, activeCommands]);
 
   return (
     <div 
@@ -86,23 +184,23 @@ export const GameInterface: React.FC<GameInterfaceProps> = ({ onExit, initialSta
             
             <div className="flex-1 flex flex-col lg:flex-row relative overflow-hidden z-10">
                 <div className="contents animate-in fade-in slide-in-from-bottom-4 duration-700">
-                    <LeftPanel stats={gameState.角色} isHellMode={isHellMode} difficulty={gameState.游戏难度} />
+                    <LeftPanel stats={previewState.角色} isHellMode={isHellMode} difficulty={gameState.游戏难度} />
                     
                     <CenterPanel 
                         logs={gameState.日志} 
                         combatState={gameState.战斗}
-                        playerStats={gameState.角色}
+                        playerStats={previewState.角色}
                         skills={gameState.角色.技能}
-                        inventory={gameState.背包} 
+                        inventory={previewState.背包} 
                         confidants={gameState.社交} 
-                        onSendMessage={handleSendMessage}
+                        onSendMessage={handlePlayerInput}
                         onReroll={handleReroll}
                         lastRawResponse={lastAIResponse}
                         onPlayerAction={handlePlayerAction}
                         isProcessing={isProcessing}
                         isStreaming={isStreaming}
-                        commandQueue={commandQueue}
-                        onRemoveCommand={removeFromQueue}
+                        commandQueue={activeCommands}
+                        onRemoveCommand={isProcessing ? undefined : removeFromQueue}
                         
                         onEditLog={handleEditLog}
                         onDeleteLog={handleDeleteLog}
@@ -123,25 +221,28 @@ export const GameInterface: React.FC<GameInterfaceProps> = ({ onExit, initialSta
                     <RightPanel 
                         onOpenInventory={() => setActiveModal('INVENTORY')}
                         onOpenEquipment={() => setActiveModal('EQUIPMENT')}
-                        onOpenSettings={() => setActiveModal('SETTINGS')}
+                        onOpenSettings={() => openSettings('MAIN')}
                         onOpenSocial={() => setActiveModal('SOCIAL')}
                         onOpenTasks={() => setActiveModal('TASKS')}
                         onOpenSkills={() => setActiveModal('SKILLS')}
                         onOpenMap={() => setActiveModal('MAP')}
-                        onOpenPhone={() => setActiveModal('PHONE')}
+                        onOpenPhone={() => hasMagicPhone && setActiveModal('PHONE')}
                         onOpenWorld={() => setActiveModal('WORLD')}
                         onOpenFamilia={() => setActiveModal('FAMILIA')}
                         onOpenStory={() => setActiveModal('STORY')}
                         onOpenContract={() => setActiveModal('CONTRACT')}
                         onOpenLoot={() => setActiveModal('LOOT')}
+                        onOpenLootVault={() => setActiveModal('LOOT_VAULT')}
                         onOpenMemory={() => setActiveModal('MEMORY')}
                         onOpenPresent={() => setActiveModal('PRESENT')}
                         onOpenParty={() => setActiveModal('PARTY')}
+                        onOpenSaveManager={() => setActiveModal('SAVE_MANAGER')}
                         isHellMode={isHellMode}
+                        hasPhone={hasMagicPhone}
                     />
                 </div>
             </div>
-            <BottomBanner isHellMode={isHellMode} />
+            <BottomBanner isHellMode={isHellMode} announcements={gameState.世界?.头条新闻} />
         </div>
 
         {/* Mobile View */}
@@ -158,18 +259,18 @@ export const GameInterface: React.FC<GameInterfaceProps> = ({ onExit, initialSta
                      <CenterPanel 
                         logs={gameState.日志} 
                         combatState={gameState.战斗}
-                        playerStats={gameState.角色}
+                        playerStats={previewState.角色}
                         skills={gameState.角色.技能}
-                        inventory={gameState.背包}
+                        inventory={previewState.背包}
                         confidants={gameState.社交} 
-                        onSendMessage={handleSendMessage}
+                        onSendMessage={handlePlayerInput}
                         onReroll={handleReroll}
                         lastRawResponse={lastAIResponse}
                         onPlayerAction={handlePlayerAction}
                         isProcessing={isProcessing}
                         isStreaming={isStreaming}
-                        commandQueue={commandQueue}
-                        onRemoveCommand={removeFromQueue}
+                        commandQueue={activeCommands}
+                        onRemoveCommand={isProcessing ? undefined : removeFromQueue}
                         onEditLog={handleEditLog}
                         onDeleteLog={handleDeleteLog}
                         onEditUserLog={handleEditUserLog}
@@ -188,16 +289,16 @@ export const GameInterface: React.FC<GameInterfaceProps> = ({ onExit, initialSta
                  )}
                  {mobileActiveTab === 'INV' && (
                      <MobileInventoryView 
-                        items={gameState.背包}
-                        equipment={gameState.角色.装备}
-                        onEquipItem={(item) => handlePlayerAction('item', item)} 
-                        onUnequipItem={(slot) => handlePlayerAction('item', slot)} 
-                        onUseItem={(item) => handlePlayerAction('item', item)}
+                        items={previewState.背包}
+                        equipment={previewState.角色.装备}
+                        onEquipItem={queueEquipItem}
+                        onUnequipItem={queueUnequipItem}
+                        onUseItem={queueUseItem}
                      />
                  )}
                  {mobileActiveTab === 'CHAR' && (
                      <div className="h-full overflow-y-auto bg-zinc-950 p-4">
-                         <LeftPanel stats={gameState.角色} className="w-full border-none shadow-none" isHellMode={isHellMode} difficulty={gameState.游戏难度} />
+                         <LeftPanel stats={previewState.角色} className="w-full border-none shadow-none" isHellMode={isHellMode} difficulty={gameState.游戏难度} />
                      </div>
                  )}
                  {mobileActiveTab === 'MAP' && (
@@ -213,18 +314,21 @@ export const GameInterface: React.FC<GameInterfaceProps> = ({ onExit, initialSta
                      <MobileMenuOverlay 
                         isOpen={true} 
                         onClose={() => setMobileActiveTab('CHAT')}
+                        hasPhone={hasMagicPhone}
                         actions={{
-                            onOpenSettings: () => setActiveModal('SETTINGS'),
+                            onOpenSettings: () => openSettings('MAIN'),
                             onOpenEquipment: () => setActiveModal('EQUIPMENT'),
                             onOpenSocial: () => setActiveModal('SOCIAL'),
                             onOpenTasks: () => setActiveModal('TASKS'),
                             onOpenSkills: () => setActiveModal('SKILLS'),
-                            onOpenPhone: () => setActiveModal('PHONE'),
+                            onOpenPhone: () => hasMagicPhone && setActiveModal('PHONE'),
                             onOpenWorld: () => setActiveModal('WORLD'),
                             onOpenFamilia: () => setActiveModal('FAMILIA'),
                             onOpenStory: () => setActiveModal('STORY'),
                             onOpenContract: () => setActiveModal('CONTRACT'),
                             onOpenLoot: () => setActiveModal('LOOT'),
+                            onOpenLootVault: () => setActiveModal('LOOT_VAULT'),
+                            onOpenSaveManager: () => setActiveModal('SAVE_MANAGER'),
                             onOpenMemory: () => setActiveModal('MEMORY'),
                             onOpenPresent: () => setActiveModal('PRESENT'),
                             onOpenParty: () => setActiveModal('PARTY'),
@@ -241,20 +345,19 @@ export const GameInterface: React.FC<GameInterfaceProps> = ({ onExit, initialSta
         <InventoryModal 
             isOpen={activeModal === 'INVENTORY'} 
             onClose={closeModal} 
-            items={gameState.背包} 
-            equipment={gameState.角色.装备} 
-            onAddToQueue={addToQueue} 
+            items={previewState.背包} 
+            equipment={previewState.角色.装备} 
             onEquipItem={handleEquipItem} 
-            onUnequipItem={(slot) => addToQueue(`卸下${slot}`)} 
+            onUnequipItem={queueUnequipItem} 
+            onUseItem={queueUseItem}
         />
 
         <EquipmentModal 
             isOpen={activeModal === 'EQUIPMENT'} 
             onClose={closeModal} 
-            equipment={gameState.角色.装备}
-            inventory={gameState.背包}
-            onAddToQueue={addToQueue}
-            onUnequipItem={(slot) => addToQueue(`卸下${slot}`)}
+            equipment={previewState.角色.装备}
+            inventory={previewState.背包}
+            onUnequipItem={queueUnequipItem}
         />
         
         <SocialModal 
@@ -271,6 +374,8 @@ export const GameInterface: React.FC<GameInterfaceProps> = ({ onExit, initialSta
             messages={gameState.短信}
             contacts={gameState.社交}
             moments={gameState.动态}
+            phoneState={gameState.魔石通讯终端}
+            hasPhone={hasMagicPhone}
             onSendMessage={(text, channel, target) => handleSendMessage(`[短信/${channel}] To ${target || 'Anyone'}: ${text}`)}
             onCreateGroup={(name, members) => addToQueue(`创建群组: ${name}, 成员: ${members.join(',')}`)}
             onCreateMoment={(content, imageDesc) => handleCreateMoment(content, imageDesc)}
@@ -308,6 +413,12 @@ export const GameInterface: React.FC<GameInterfaceProps> = ({ onExit, initialSta
             onClose={closeModal} 
             items={gameState.公共战利品} 
             carrier={gameState.战利品背负者}
+        />
+
+        <LootVaultModal
+            isOpen={activeModal === 'LOOT_VAULT'}
+            onClose={closeModal}
+            items={gameState.战利品}
         />
 
         <FamiliaModal 
@@ -365,6 +476,15 @@ export const GameInterface: React.FC<GameInterfaceProps> = ({ onExit, initialSta
             onApply={applyMemorySummary}
             onCancel={cancelMemorySummary}
         />
+
+        <SaveManagerModal
+            isOpen={activeModal === 'SAVE_MANAGER'}
+            onClose={closeModal}
+            gameState={gameState}
+            onSaveGame={manualSave}
+            onLoadGame={loadGame}
+            onUpdateGameState={setGameState}
+        />
         
         <SettingsModal 
             isOpen={activeModal === 'SETTINGS'} 
@@ -378,6 +498,7 @@ export const GameInterface: React.FC<GameInterfaceProps> = ({ onExit, initialSta
             onExitGame={onExit} 
             gameState={gameState} 
             onUpdateGameState={setGameState} 
+            initialView={settingsView as any}
         />
     </div>
   );

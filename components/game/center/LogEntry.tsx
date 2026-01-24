@@ -37,7 +37,8 @@ export const LogEntryItem: React.FC<LogEntryProps> = ({
     const isPrimaryAiLog = !!log.rawResponse;
     const canEditAI = !isPlayer && isPrimaryAiLog && !!onEditClick;
     const canEditUser = isPlayer && !!onEditUserLog;
-    const hasActions = !!onDelete || canEditAI || canEditUser;
+    const canDelete = !!onDelete && (isPrimaryAiLog || isPlayer);
+    const hasActions = canEditAI || canEditUser || canDelete;
 
     const getTextSize = () => {
         switch(fontSize) {
@@ -47,6 +48,36 @@ export const LogEntryItem: React.FC<LogEntryProps> = ({
         }
     };
     const textSizeClass = getTextSize();
+
+    const renderDecoratedText = (text: string, className: string) => {
+        const lines = text.split('\n');
+        return (
+            <div className={`${className} whitespace-pre-wrap space-y-1`}>
+                {lines.map((line, idx) => {
+                    const trimmed = line.trim();
+                    if (!trimmed) {
+                        return <div key={idx} className="h-3" />;
+                    }
+                    const isJudge = trimmed.startsWith('【判定】');
+                    if (isJudge) {
+                        return (
+                            <div
+                                key={idx}
+                                className="px-2 py-1 border border-blue-600/50 bg-blue-950/40 text-blue-200 font-mono tracking-widest text-[11px] uppercase"
+                            >
+                                {line}
+                            </div>
+                        );
+                    }
+                    return (
+                        <div key={idx}>
+                            {line}
+                        </div>
+                    );
+                })}
+            </div>
+        );
+    };
 
     const MobileActions = ({ align }: { align: 'left' | 'right' | 'center' }) => {
         if (!hasActions) return null;
@@ -78,7 +109,7 @@ export const LogEntryItem: React.FC<LogEntryProps> = ({
                         <Edit2 size={12} /> 编辑
                     </button>
                 )}
-                {onDelete && (
+                {canDelete && (
                     <button
                         type="button"
                         onClick={(e) => {
@@ -123,7 +154,7 @@ export const LogEntryItem: React.FC<LogEntryProps> = ({
                         )}
 
                         {/* Delete Action */}
-                        {onDelete && (
+                        {canDelete && (
                             <button 
                                 onClick={(e) => { 
                                     e.stopPropagation(); 
@@ -173,14 +204,9 @@ export const LogEntryItem: React.FC<LogEntryProps> = ({
                 <div className="flex justify-end pr-4 mb-[-10px] relative z-20">
                     <ActionMenu />
                 </div>
-                <div className="relative border-l-2 border-blue-900/50 pl-6 py-2 hover:border-blue-600 transition-colors duration-500">
-                    <div className="absolute -left-[9px] top-0 text-blue-900/50 group-hover:text-blue-600 transition-colors bg-zinc-950 px-1">
-                        <Info size={14} />
-                    </div>
-                    
-                    <div className={`font-serif text-zinc-300 text-justify tracking-wide whitespace-pre-wrap ${textSizeClass}`}>
-                        {content}
-                    </div>
+                <div className="relative bg-zinc-950/70 border border-blue-900/60 px-5 py-4 shadow-[0_8px_24px_rgba(0,0,0,0.4)] backdrop-blur-sm">
+                    <div className="absolute inset-1 border border-blue-900/30 pointer-events-none" />
+                    {renderDecoratedText(content, `font-serif text-zinc-200 text-justify tracking-wide text-sm md:text-base leading-relaxed`)}
                 </div>
                 <MobileActions align="left" />
             </div>
@@ -196,7 +222,7 @@ export const LogEntryItem: React.FC<LogEntryProps> = ({
                 <div className="flex items-end gap-3 max-w-full">
                     <div className="flex flex-col items-end">
                         <div className="bg-black border border-zinc-700 text-white px-4 py-3 rounded-2xl rounded-tr-none shadow-[0_4px_10px_rgba(0,0,0,0.5)] relative min-w-[60px] group-hover:border-blue-500 transition-colors">
-                            <p className={`font-display tracking-wide whitespace-pre-wrap ${textSizeClass}`}>{content}</p>
+                            {renderDecoratedText(content, `font-display tracking-wide ${textSizeClass}`)}
                         </div>
                         <MobileActions align="right" />
                     </div>
@@ -242,9 +268,7 @@ export const LogEntryItem: React.FC<LogEntryProps> = ({
                     </div>
 
                     <div className="bg-white text-black px-5 py-4 clip-p5-bubble-left shadow-[5px_5px_0_rgba(0,0,0,0.3)] relative min-w-[120px]">
-                        <p className={`font-display font-bold whitespace-pre-wrap drop-shadow-sm ${textSizeClass}`}>
-                            {content}
-                        </p>
+                        {renderDecoratedText(content, `font-display font-bold drop-shadow-sm ${textSizeClass}`)}
                     </div>
                     <MobileActions align="left" />
                 </div>

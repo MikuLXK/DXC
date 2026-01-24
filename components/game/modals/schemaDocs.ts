@@ -1,4 +1,4 @@
-export const GAME_SCHEMA_DOCS = [
+﻿export const GAME_SCHEMA_DOCS = [
     {
         title: "1. 全局状态 (Global)",
         path: "gameState",
@@ -68,8 +68,8 @@ export const GAME_SCHEMA_DOCS = [
             "技能": "Array<Skill>",
             "魔法": "Array<MagicSpell>",
             "发展能力": "Array<FalnaAbility>",
-            "诅咒": "Array<{名称, 描述}>",
-            "状态": "String[]",
+            "诅咒": "Array<{名称, 类型, 效果, 持续时间}>",
+            "状态": "Array<{名称, 类型, 效果, 持续时间}>",
             "装备": { "主手": "String", "副手": "String", "头部": "String", "身体": "String", "手部": "String", "腿部": "String", "足部": "String", "饰品1": "String", "饰品2": "String", "饰品3": "String" }
         }
     },
@@ -200,6 +200,8 @@ export const GAME_SCHEMA_DOCS = [
             "眷族声望": "Number",
             "头条新闻": "String[]",
             "街头传闻": "Array<{主题, 传播度}>",
+            "诸神神会": "{下次神会开启时间, 神会主题, 讨论内容[{角色, 对话}], 最终结果}",
+            "NPC后台跟踪": "Array<{NPC, 当前行动, 位置?, 进度?, 预计完成?}>",
             "下次更新": "String"
         }
     },
@@ -219,11 +221,12 @@ export const GAME_SCHEMA_DOCS = [
     },
     {
         title: "11. 手机系统 (Phone)",
-        path: "gameState.短信 / gameState.动态",
+        path: "gameState.短信 / gameState.动态 / gameState.魔石通讯终端",
         desc: "聊天与动态。",
         structure: {
             "短信": "Array<{id, 发送者, 目标?, 内容, 时间戳, timestampValue?, 频道, 群组名称?}>",
-            "动态": "Array<{id, 发布者, 头像?, 内容, 时间戳, timestampValue?, 点赞数, 评论[], 图片描述?}>"
+            "动态": "Array<{id, 发布者, 头像?, 内容, 时间戳, timestampValue?, 点赞数, 评论[], 图片描述?}>",
+            "魔石通讯终端": "{电量, 当前信号}"
         }
     },
     {
@@ -277,3 +280,5 @@ export const GAME_SCHEMA_DOCS = [
         }
     }
 ];
+
+

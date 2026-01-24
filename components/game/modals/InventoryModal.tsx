@@ -9,9 +9,9 @@ interface InventoryModalProps {
   items: InventoryItem[];
   equipment: { [key: string]: string }; 
   initialTab?: string;
-  onAddToQueue: (cmd: string) => void;
   onEquipItem: (item: InventoryItem) => void;
-  onUnequipItem: (slotKey: string) => void;
+  onUnequipItem: (slotKey: string, itemName?: string, itemId?: string) => void;
+  onUseItem: (item: InventoryItem) => void;
 }
 
 export const InventoryModal: React.FC<InventoryModalProps> = ({ 
@@ -20,9 +20,9 @@ export const InventoryModal: React.FC<InventoryModalProps> = ({
     items, 
     equipment,
     initialTab = 'ALL',
-    onAddToQueue,
     onEquipItem,
-    onUnequipItem
+    onUnequipItem,
+    onUseItem
 }) => {
   const [activeTab, setActiveTab] = useState<string>(initialTab);
   const [hoveredItem, setHoveredItem] = useState<string | null>(null);
@@ -35,7 +35,7 @@ export const InventoryModal: React.FC<InventoryModalProps> = ({
       const equippedList: InventoryItem[] = [];
       Object.entries(safeEquipment).forEach(([slot, itemName]) => {
           if (itemName) {
-              const existsInInventory = safeItems.some(i => i.名称 === itemName && i.已装备);
+              const existsInInventory = safeItems.some(i => i.名称 === itemName);
               if (!existsInInventory) {
                   equippedList.push({
                       id: `equipped-${slot}`,
@@ -93,20 +93,16 @@ export const InventoryModal: React.FC<InventoryModalProps> = ({
   }, [allItems, activeTab]);
 
   const handleUseItem = (item: InventoryItem) => {
-      onAddToQueue(`使用物品: ${item.名称}`);
+      onUseItem(item);
   };
 
   const handleEquipClick = (item: InventoryItem) => {
       onEquipItem(item);
-      onAddToQueue(`装备物品: ${item.名称}`);
   };
 
   const handleUnequipClick = (item: InventoryItem) => {
       const slot = item.装备槽位 || (item.类型 === 'weapon' ? '主手' : '身体');
-      onUnequipItem(slot);
-      if (!item.装备槽位) {
-           onAddToQueue(`卸下装备: ${item.名称}`);
-      }
+      onUnequipItem(slot, item.名称, item.id);
   };
 
   const getItemIcon = (type: string) => {
@@ -283,7 +279,7 @@ export const InventoryModal: React.FC<InventoryModalProps> = ({
                                 </div>
                                 {item.攻击特效 && item.攻击特效 !== "无" && (
                                     <div className="text-[10px] text-red-400 mt-1 font-bold uppercase animate-pulse">
-                                        Effect: {item.攻击特效}
+                                        特效: {item.攻击特效}
                                     </div>
                                 )}
                             </div>

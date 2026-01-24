@@ -8,12 +8,14 @@ interface MenuButtonProps {
     colorClass: string;
     hoverColorClass: string;
     onClick: () => void;
+    disabled?: boolean;
 }
 
-export const MenuButton: React.FC<MenuButtonProps> = ({ icon, label, delay, colorClass, hoverColorClass, onClick }) => (
+export const MenuButton: React.FC<MenuButtonProps> = ({ icon, label, delay, colorClass, hoverColorClass, onClick, disabled }) => (
     <button 
-        onClick={onClick}
-        className={`w-full group relative h-14 lg:h-14 shrink-0 overflow-hidden transition-all duration-200 hover:z-10 mb-2 border-2 border-black shadow-lg hover:shadow-xl`}
+        onClick={disabled ? undefined : onClick}
+        disabled={disabled}
+        className={`w-full group relative h-14 lg:h-14 shrink-0 overflow-hidden transition-all duration-200 hover:z-10 mb-2 border-2 border-black shadow-lg hover:shadow-xl disabled:opacity-40 disabled:cursor-not-allowed`}
         style={{ animationDelay: `${delay}ms` }}
     >
         {/* Background */}

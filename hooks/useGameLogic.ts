@@ -6,11 +6,18 @@ import { generateDungeonMasterResponse, DEFAULT_PROMPT_MODULES, DEFAULT_MEMORY_C
 import { P_MEM_S2M, P_MEM_M2L } from '../prompts';
 import { Difficulty } from '../types/enums';
 
+type CommandKind = 'EQUIP' | 'UNEQUIP' | 'USE' | 'TOGGLE';
+
 interface CommandItem {
     id: string;
     text: string;
     undoAction?: () => void;
-    dedupeKey?: string; 
+    dedupeKey?: string;
+    kind?: CommandKind;
+    slotKey?: string;
+    itemId?: string;
+    itemName?: string;
+    quantity?: number;
 }
 
 type MemorySummaryPhase = 'preview' | 'processing' | 'result';
@@ -28,6 +35,7 @@ interface PendingInteraction {
     contextType: 'ACTION' | 'PHONE';
     commandsOverride?: string[];
     stateOverride?: GameState;
+    logInputOverride?: string;
 }
 
 const DEFAULT_AI_CONFIG = {
@@ -44,7 +52,7 @@ const DEFAULT_CONTEXT_MODULES: ContextModuleConfig[] = [
     { id: 'm_player', type: 'PLAYER_DATA', name: '玩家数据', enabled: true, order: 3, params: {} },
     { id: 'm_social', type: 'SOCIAL_CONTEXT', name: '周边NPC', enabled: true, order: 4, params: { includeAttributes: ['appearance', 'status'], presentMemoryLimit: 30, absentMemoryLimit: 6, specialPresentMemoryLimit: 30, specialAbsentMemoryLimit: 12 } },
     { id: 'm_familia', type: 'FAMILIA_CONTEXT', name: '眷族信息', enabled: true, order: 5, params: {} },
-    { id: 'm_inv', type: 'INVENTORY_CONTEXT', name: '背包/公共战利品', enabled: true, order: 6, params: { detailLevel: 'medium' } },
+    { id: 'm_inv', type: 'INVENTORY_CONTEXT', name: '背包/战利品', enabled: true, order: 6, params: { detailLevel: 'medium' } },
     { id: 'm_phone', type: 'PHONE_CONTEXT', name: '手机/消息', enabled: true, order: 7, params: { perTargetLimit: 10, includeMoments: true, momentLimit: 6 } },
     { id: 'm_combat', type: 'COMBAT_CONTEXT', name: '战斗数据', enabled: true, order: 8, params: {} }, 
     { id: 'm_task', type: 'TASK_CONTEXT', name: '任务列表', enabled: true, order: 9, params: {} },
@@ -132,6 +140,7 @@ export const useGameLogic = (initialState?: GameState, onExitCb?: () => void) =>
 
     const [settings, setSettings] = useState<AppSettings>(DEFAULT_SETTINGS);
     const [commandQueue, setCommandQueue] = useState<CommandItem[]>([]);
+    const [pendingCommands, setPendingCommands] = useState<CommandItem[]>([]);
     const [currentOptions, setCurrentOptions] = useState<ActionOption[]>([]);
     const [lastAIResponse, setLastAIResponse] = useState<string>('');
     const [isProcessing, setIsProcessing] = useState(false);
@@ -288,7 +297,7 @@ export const useGameLogic = (initialState?: GameState, onExitCb?: () => void) =>
                     if (current[lastKey] === undefined) current[lastKey] = [];
                     else return { success: false, error: `Target '${lastKey}' is not array` };
                 }
-                if (lastKey === '背包' || path.includes('inventory') || lastKey === '公共战利品') {
+                if (lastKey === '背包' || path.includes('inventory') || lastKey === '公共战利品' || lastKey === '战利品') {
                     const newItem = value as InventoryItem;
                     const compItem: InventoryItem = { ...newItem, id: newItem.id, 名称: newItem.名称, 描述: newItem.描述, 数量: newItem.数量 || 1, 类型: newItem.类型 || 'loot' };
                     const existingIdx = current[lastKey].findIndex((i: InventoryItem) => i.名称 === compItem.名称);
@@ -335,7 +344,14 @@ export const useGameLogic = (initialState?: GameState, onExitCb?: () => void) =>
         return null;
     };
 
-    const handleAIInteraction = async (input: string, contextType: 'ACTION'|'PHONE'='ACTION', commandsOverride?: string[], stateOverride?: GameState, skipMemoryCheck: boolean = false) => {
+    const handleAIInteraction = async (
+        input: string,
+        contextType: 'ACTION' | 'PHONE' = 'ACTION',
+        commandsOverride?: string[],
+        stateOverride?: GameState,
+        skipMemoryCheck: boolean = false,
+        logInputOverride?: string
+    ) => {
         const baseState = stateOverride || gameState;
 
         if (!skipMemoryCheck) {
@@ -345,7 +361,7 @@ export const useGameLogic = (initialState?: GameState, onExitCb?: () => void) =>
             }
             const summaryRequest = getMemorySummaryRequest(baseState);
             if (summaryRequest) {
-                setPendingInteraction({ input, contextType, commandsOverride, stateOverride });
+                setPendingInteraction({ input, contextType, commandsOverride, stateOverride, logInputOverride });
                 setMemorySummaryState(summaryRequest);
                 setTimeout(() => setDraftInput(input), 0);
                 return;
@@ -359,9 +375,10 @@ export const useGameLogic = (initialState?: GameState, onExitCb?: () => void) =>
         setLastAIResponse('');
         if (settings.enableStreaming) setIsStreaming(true);
         
+        const logText = logInputOverride ?? input;
         const newUserLog: LogEntry = { 
             id: generateLegacyId(), 
-            text: input, 
+            text: logText, 
             sender: 'player', 
             timestamp: Date.now(), 
             turnIndex: turnIndex, 
@@ -468,6 +485,7 @@ export const useGameLogic = (initialState?: GameState, onExitCb?: () => void) =>
         } finally {
             setIsProcessing(false);
             setIsStreaming(false);
+            clearPendingCommands();
         }
     };
 
@@ -535,7 +553,8 @@ export const useGameLogic = (initialState?: GameState, onExitCb?: () => void) =>
                 pending.contextType,
                 pending.commandsOverride,
                 nextState,
-                true
+                true,
+                pending.logInputOverride
             );
         }
     };
@@ -549,14 +568,64 @@ export const useGameLogic = (initialState?: GameState, onExitCb?: () => void) =>
         setGameState(prev => ({ ...prev, 社交: prev.社交.map(c => c.id === id ? { ...c, ...updates } : c) }));
     };
     const updateMemory = (newMem: MemorySystem) => setGameState(prev => ({ ...prev, 记忆: newMem }));
-    const addToQueue = (cmd: string) => setCommandQueue(prev => [...prev, { id: Date.now().toString(), text: cmd }]); 
+
+    const addToQueue = (
+        cmd: string,
+        undoAction?: () => void,
+        dedupeKey?: string,
+        meta?: Partial<CommandItem>
+    ) => {
+        const id = `${Date.now()}_${Math.random().toString(36).slice(2, 7)}`;
+        const nextItem: CommandItem = { id, text: cmd, undoAction, dedupeKey, ...meta };
+        setCommandQueue(prev => {
+            if (dedupeKey) {
+                const existingIdx = prev.findIndex(c => c.dedupeKey === dedupeKey);
+                if (existingIdx >= 0) {
+                    return prev.filter((_, i) => i !== existingIdx);
+                }
+            }
+
+            if ((nextItem.kind === 'EQUIP' || nextItem.kind === 'UNEQUIP') && nextItem.slotKey) {
+                const conflictIdx = prev.findIndex(c =>
+                    (c.kind === 'EQUIP' || c.kind === 'UNEQUIP') &&
+                    c.slotKey === nextItem.slotKey &&
+                    c.kind !== nextItem.kind
+                );
+                if (conflictIdx >= 0) {
+                    return prev.filter((_, i) => i !== conflictIdx);
+                }
+            }
+
+            return [...prev, nextItem];
+        });
+    };
+
     const removeFromQueue = (id: string) => setCommandQueue(prev => prev.filter(c => c.id !== id));
-    const stopInteraction = () => { setIsProcessing(false); setIsStreaming(false); };
+    const clearPendingCommands = () => setPendingCommands([]);
+    const consumeCommandQueue = (): CommandItem[] => {
+        if (commandQueue.length === 0) return [];
+        const current = [...commandQueue];
+        setPendingCommands(current);
+        setCommandQueue([]);
+        return current;
+    };
+    const stopInteraction = () => { setIsProcessing(false); setIsStreaming(false); clearPendingCommands(); };
     const handleSendMessage = (text: string, channel: 'private'|'group' = 'private', target?: string) => {
         let fullText = text;
         if (channel === 'group' && target) fullText = `[群聊: ${target}] ${text}`;
         else if (channel === 'private' && target && target !== 'Player') fullText = `[私信: ${target}] ${text}`;
         handleAIInteraction(fullText, 'PHONE');
+    };
+
+    const handlePlayerInput = (text: string) => {
+        if (isProcessing) return;
+        const queued = consumeCommandQueue();
+        const commandPayload = queued.map(c => c.text);
+        const commandBlock = commandPayload.length > 0
+            ? `[用户指令]\n${commandPayload.join('\n')}\n[/用户指令]\n`
+            : '';
+        const aiInput = commandBlock ? `${commandBlock}${text}` : text;
+        handleAIInteraction(aiInput, 'ACTION', commandPayload, undefined, false, text);
     };
     const handleCreateMoment = (content: string, imageDesc?: string) => {
         if (!content.trim()) return;
@@ -669,9 +738,9 @@ export const useGameLogic = (initialState?: GameState, onExitCb?: () => void) =>
 
     return {
         gameState, setGameState, settings, setSettings,
-        commandQueue, addToQueue, removeFromQueue, currentOptions, lastAIResponse, isProcessing, isStreaming, draftInput, setDraftInput,
+        commandQueue, pendingCommands, addToQueue, removeFromQueue, currentOptions, lastAIResponse, isProcessing, isStreaming, draftInput, setDraftInput,
         memorySummaryState, confirmMemorySummary, applyMemorySummary, cancelMemorySummary,
-        handleAIInteraction, stopInteraction, handlePlayerAction, handleSendMessage, handleCreateMoment, handleSilentWorldUpdate, saveSettings, manualSave, loadGame, updateConfidant, updateMemory,
+        handleAIInteraction, stopInteraction, handlePlayerAction, handlePlayerInput, handleSendMessage, handleCreateMoment, handleSilentWorldUpdate, saveSettings, manualSave, loadGame, updateConfidant, updateMemory,
         handleReroll, handleEditLog, handleDeleteLog, handleEditUserLog, handleUpdateLogText, handleUserRewrite, handleDeleteTask
     };
 };

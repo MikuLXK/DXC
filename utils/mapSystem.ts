@@ -111,6 +111,15 @@ const createCirclePath = (cx: number, cy: number, r: number): string => {
     ].join(' ');
 };
 
+const createPolylinePath = (points: { x: number; y: number }[]): string => {
+    if (points.length === 0) return '';
+    const [first, ...rest] = points;
+    return [
+        `M ${first.x} ${first.y}`,
+        ...rest.map(p => `L ${p.x} ${p.y}`)
+    ].join(' ');
+};
+
 // --- 欧拉丽全地图生成 (Strict layout) ---
 
 export const generateDanMachiMap = (): WorldMapData => {
@@ -273,12 +282,99 @@ export const generateDanMachiMap = (): WorldMapData => {
         { floorStart: 37, floorEnd: 37, name: "深层·白之宫殿", description: "只有第一级冒险者才能踏足的死地。", dangerLevel: "HELL", landmarks: [] }
     ];
 
+    const routes: TradeRoute[] = [
+        {
+            id: 'route_ring_inner',
+            name: '中央环路',
+            path: createCirclePath(CENTER_X, CENTER_Y, 4500),
+            type: 'MAIN_STREET',
+            width: 140,
+            color: '#94a3b8',
+            floor: 0
+        },
+        {
+            id: 'route_ring_outer',
+            name: '外环干道',
+            path: createCirclePath(CENTER_X, CENTER_Y, 15000),
+            type: 'MAIN_STREET',
+            width: 180,
+            color: '#64748b',
+            floor: 0
+        },
+        {
+            id: 'route_north_south',
+            name: '南北大道',
+            path: createPolylinePath([
+                { x: CENTER_X, y: CENTER_Y - 19000 },
+                { x: CENTER_X, y: CENTER_Y },
+                { x: CENTER_X, y: CENTER_Y + 19000 }
+            ]),
+            type: 'MAIN_STREET',
+            width: 200,
+            color: '#cbd5f5',
+            floor: 0
+        },
+        {
+            id: 'route_east_west',
+            name: '东西大道',
+            path: createPolylinePath([
+                { x: CENTER_X - 19000, y: CENTER_Y },
+                { x: CENTER_X, y: CENTER_Y },
+                { x: CENTER_X + 19000, y: CENTER_Y }
+            ]),
+            type: 'MAIN_STREET',
+            width: 200,
+            color: '#cbd5f5',
+            floor: 0
+        },
+        {
+            id: 'route_market_trade',
+            name: '商贸走廊',
+            path: createPolylinePath([
+                { x: CENTER_X - 9000, y: CENTER_Y + 12000 },
+                { x: CENTER_X - 2000, y: CENTER_Y + 6000 },
+                { x: CENTER_X + 6000, y: CENTER_Y + 2000 },
+                { x: CENTER_X + 14000, y: CENTER_Y }
+            ]),
+            type: 'TRADE_ROUTE',
+            width: 140,
+            color: '#f59e0b',
+            floor: 0
+        },
+        {
+            id: 'route_slum_alley',
+            name: '迷宫街小巷',
+            path: createPolylinePath([
+                { x: CENTER_X + 11000, y: CENTER_Y - 2000 },
+                { x: CENTER_X + 14000, y: CENTER_Y },
+                { x: CENTER_X + 12000, y: CENTER_Y + 2500 }
+            ]),
+            type: 'ALLEY',
+            width: 80,
+            color: '#475569',
+            floor: 0
+        },
+        {
+            id: 'route_heph_link',
+            name: '锻造街道',
+            path: createPolylinePath([
+                { x: CENTER_X - 13000, y: CENTER_Y + 13000 },
+                { x: CENTER_X - 10000, y: CENTER_Y + 10000 },
+                { x: CENTER_X - 6000, y: CENTER_Y + 6000 }
+            ]),
+            type: 'TRADE_ROUTE',
+            width: 120,
+            color: '#f97316',
+            floor: 0
+        }
+    ];
+
     return {
         config: { width: MAP_SIZE, height: MAP_SIZE },
         factions,
         territories,
         terrain,
-        routes: [], // Routes visualized via terrain or implicit
+        routes,
         surfaceLocations,
         dungeonStructure
     };

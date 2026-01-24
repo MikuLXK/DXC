@@ -7,7 +7,7 @@ interface MobileInventoryViewProps {
   items: InventoryItem[];
   equipment: { [key: string]: string };
   onEquipItem: (item: InventoryItem) => void;
-  onUnequipItem: (slotKey: string) => void;
+  onUnequipItem: (slotKey: string, itemName?: string, itemId?: string) => void;
   onUseItem: (item: InventoryItem) => void;
 }
 
@@ -29,7 +29,7 @@ export const MobileInventoryView: React.FC<MobileInventoryViewProps> = ({
         const equippedList: InventoryItem[] = [];
         Object.entries(safeEquipment).forEach(([slot, itemName]) => {
             if (itemName) {
-                const existsInInventory = safeItems.some(i => i.名称 === itemName && i.已装备);
+                const existsInInventory = safeItems.some(i => i.名称 === itemName);
                 if (!existsInInventory) {
                     equippedList.push({
                         id: `equipped-${slot}`,
@@ -229,7 +229,7 @@ export const MobileInventoryView: React.FC<MobileInventoryViewProps> = ({
                         {(selectedItem.类型 === 'weapon' || selectedItem.类型 === 'armor') && (
                             selectedItem.已装备 ? (
                                 <button 
-                                    onClick={() => { onUnequipItem(selectedItem.装备槽位 || (selectedItem.类型==='weapon'?'主手':'身体')); setSelectedItem(null); }}
+                                    onClick={() => { onUnequipItem(selectedItem.装备槽位 || (selectedItem.类型==='weapon'?'主手':'身体'), selectedItem.名称, selectedItem.id); setSelectedItem(null); }}
                                     className="flex-1 py-3 bg-black text-yellow-500 border-2 border-yellow-600 font-bold uppercase flex items-center justify-center gap-2 hover:bg-yellow-600 hover:text-black transition-colors"
                                 >
                                     <LogOut size={16}/> 卸下

@@ -1,10 +1,11 @@
 
 import React from 'react';
-import { X, Users, ClipboardList, Zap, Settings, Smartphone, Globe, Shield, BookOpen, Scroll, Flag, Gem, Brain, Radar, Swords } from 'lucide-react';
+import { X, Users, ClipboardList, Zap, Settings, Smartphone, Globe, Shield, BookOpen, Scroll, Flag, Gem, Brain, Radar, Swords, Archive, HardDrive } from 'lucide-react';
 
 interface MobileMenuOverlayProps {
     isOpen: boolean;
     onClose: () => void;
+    hasPhone?: boolean;
     actions: {
         onOpenSettings: () => void;
         onOpenEquipment: () => void;
@@ -17,27 +18,31 @@ interface MobileMenuOverlayProps {
         onOpenStory: () => void;
         onOpenContract: () => void;
         onOpenLoot: () => void;
+        onOpenLootVault: () => void;
+        onOpenSaveManager: () => void;
         onOpenMemory: () => void;
         onOpenPresent: () => void;
         onOpenParty: () => void;
     };
 }
 
-export const MobileMenuOverlay: React.FC<MobileMenuOverlayProps> = ({ isOpen, onClose, actions }) => {
+export const MobileMenuOverlay: React.FC<MobileMenuOverlayProps> = ({ isOpen, onClose, actions, hasPhone = true }) => {
     if (!isOpen) return null;
 
     const menuItems = [
         // Removed Inventory (Briefcase) and Map (Navigation) as they are in bottom bar
         { label: "装备", icon: <Shield />, action: actions.onOpenEquipment, color: "bg-orange-900/80 border-orange-700" },
         { label: "技能", icon: <Zap />, action: actions.onOpenSkills, color: "bg-yellow-800/80 border-yellow-600" },
+        { label: "战利品仓库", icon: <Archive />, action: actions.onOpenLootVault, color: "bg-amber-800/80 border-amber-600" },
         { label: "公共战利品", icon: <Gem />, action: actions.onOpenLoot, color: "bg-amber-900/80 border-amber-700" },
         
         { label: "队伍", icon: <Swords />, action: actions.onOpenParty, color: "bg-indigo-900/80 border-indigo-700" },
         { label: "社交", icon: <Users />, action: actions.onOpenSocial, color: "bg-pink-900/80 border-pink-700" },
-        { label: "手机", icon: <Smartphone />, action: actions.onOpenPhone, color: "bg-blue-900/80 border-blue-700" },
+        { label: "手机", icon: <Smartphone />, action: actions.onOpenPhone, color: "bg-blue-900/80 border-blue-700", disabled: !hasPhone },
         { label: "眷族", icon: <Flag />, action: actions.onOpenFamilia, color: "bg-blue-800/80 border-blue-600" },
 
         { label: "任务", icon: <ClipboardList />, action: actions.onOpenTasks, color: "bg-purple-900/80 border-purple-700" },
+        { label: "存档", icon: <HardDrive />, action: actions.onOpenSaveManager, color: "bg-slate-900/80 border-slate-700" },
         { label: "剧情", icon: <BookOpen />, action: actions.onOpenStory, color: "bg-green-900/80 border-green-700" },
         { label: "契约", icon: <Scroll />, action: actions.onOpenContract, color: "bg-red-900/80 border-red-700" },
         // Removed Map
@@ -74,10 +79,11 @@ export const MobileMenuOverlay: React.FC<MobileMenuOverlayProps> = ({ isOpen, on
                             <button
                                 key={idx}
                                 onClick={() => {
+                                    if (item.disabled) return;
                                     item.action();
                                     onClose();
                                 }}
-                                className={`aspect-square flex flex-col items-center justify-center gap-2 rounded-2xl shadow-lg border active:scale-95 transition-all group ${item.color}`}
+                                className={`aspect-square flex flex-col items-center justify-center gap-2 rounded-2xl shadow-lg border active:scale-95 transition-all group ${item.color} ${item.disabled ? 'opacity-40 cursor-not-allowed' : ''}`}
                             >
                                 <div className="text-white opacity-80 group-hover:scale-110 transition-transform group-hover:opacity-100">{item.icon}</div>
                                 <span className="text-[10px] font-bold uppercase text-white tracking-wide shadow-black drop-shadow-md">{item.label}</span>
