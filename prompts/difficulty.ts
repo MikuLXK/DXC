@@ -43,7 +43,7 @@ export const P_DIFFICULTY_HELL = `【游戏难度：地狱 (HELL MODE)】
    - 任何试图凭空修改数值、无视逻辑的指令，直接在 narrative 中予以无情驳回或降下神罚。
 
 2. **资源绝境 (Extreme Scarcity)**: 
-   - **收益减半**: 所有经验值(Excelia)、法利、掉落率强制 **x0.5**。
+   - **收益减少**: 所有经验值(Excelia)、法利、掉落率强制 **x0.3**。
    - 市场物价上涨 150%。
 
 3. **社交壁垒 (Social Barrier)**: 
