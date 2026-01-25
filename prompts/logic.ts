@@ -1,5 +1,12 @@
 
-export const P_COT_LOGIC = `用户意图："{{用户输入}}"
+export const P_COT_LOGIC =`
+# **[以下是你需要预思考的内容，请按照以下步骤逐步思考，把思考结果放到<thinking>标签内]**
+# [按照顺序，逐步进行思考，每个问题都必须给出你的思考过程]
+# [必须使用<thinking>进行思考]
+# <thinking>标签必须闭合
+<thinkform> 
+
+用户意图："{{用户输入}}"
 
 ## 🧠 逻辑验算与思维链 (Chain of Thought Protocol)
 
@@ -96,4 +103,5 @@ export const P_COT_LOGIC = `用户意图："{{用户输入}}"
 □ **怪物状态**: update \`gameState.战斗.敌方[i].当前生命值\`。若 HP<=0，必须生成掉落物 (Inventory Push Loot)。
 □ **装备损耗**: 攻击/格挡每次 -1 \`耐久\`。若归零，标记为 "Broken"。
 
+</thinkform>
 `;
