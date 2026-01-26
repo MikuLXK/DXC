@@ -80,6 +80,23 @@ export const SettingsAIServices: React.FC<SettingsAIServicesProps> = ({ settings
                     </div>
                 </div>
 
+                <div className="mb-6 flex items-center gap-3">
+                    <input
+                        type="checkbox"
+                        id="nativeThinkingChain"
+                        checked={localConfig.nativeThinkingChain !== false}
+                        onChange={e => {
+                            const newConfig = { ...localConfig, nativeThinkingChain: e.target.checked };
+                            setLocalConfig(newConfig);
+                            setHasUnsavedChanges(true);
+                        }}
+                        className="w-4 h-4 text-red-600 border-zinc-300 rounded focus:ring-red-500"
+                    />
+                    <label htmlFor="nativeThinkingChain" className="text-xs font-bold uppercase text-zinc-600 select-none cursor-pointer">
+                        卡原生思维链
+                    </label>
+                </div>
+
                 {localConfig.mode === 'unified' ? (
                     <AIConfigForm 
                         label="Unified Endpoint Config"

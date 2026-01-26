@@ -73,6 +73,7 @@ const DEFAULT_SETTINGS: AppSettings = {
     contextConfig: { modules: DEFAULT_CONTEXT_MODULES },
     aiConfig: {
         mode: 'unified',
+        nativeThinkingChain: true,
         unified: { ...DEFAULT_AI_CONFIG },
         services: {
             social: { ...DEFAULT_AI_CONFIG },

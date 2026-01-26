@@ -18,6 +18,7 @@ export interface GlobalAISettings {
     npcSync: AIEndpointConfig;
     npcBrain: AIEndpointConfig;
   };
+  nativeThinkingChain?: boolean;
 }
 
 export interface LogEntry {

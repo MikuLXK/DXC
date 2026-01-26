@@ -33,6 +33,7 @@ const DEFAULT_SETTINGS: AppSettings = {
     promptModules: DEFAULT_PROMPT_MODULES,
     aiConfig: {
         mode: 'unified',
+        nativeThinkingChain: true,
         unified: { provider: 'gemini', baseUrl: 'https://generativelanguage.googleapis.com', apiKey: '', modelId: 'gemini-3-flash-preview', forceJsonOutput: false },
         services: {
             social: { provider: 'gemini', baseUrl: '', apiKey: '', modelId: '', forceJsonOutput: false },

@@ -96,13 +96,13 @@ const buildCotPrompt = (settings: AppSettings): string => {
 
 export const extractThinkingBlocks = (rawText: string): { cleaned: string; thinking?: string } => {
     if (!rawText) return { cleaned: rawText };
-    const matches = Array.from(rawText.matchAll(/<thinking>([\s\S]*?)<\/thinking>/gi));
+    const matches = Array.from(rawText.matchAll(/<thinking>([\s\S]*?)<\/thinking>|<think>([\s\S]*?)<\/think>/gi));
     if (matches.length === 0) return { cleaned: rawText };
     const thinking = matches
-        .map(m => (m[1] || "").trim())
+        .map(m => (m[1] || m[2] || "").trim())
         .filter(Boolean)
         .join('\n\n');
-    const cleaned = rawText.replace(/<thinking>[\s\S]*?<\/thinking>/gi, '').trim();
+    const cleaned = rawText.replace(/<thinking>[\s\S]*?<\/thinking>|<think>[\s\S]*?<\/think>/gi, '').trim();
     return { cleaned, thinking };
 };
 
@@ -818,7 +818,11 @@ export const generateSingleModuleContext = (mod: ContextModuleConfig, gameState:
         case 'COMMAND_HISTORY':
             return commandHistory.length > 0 ? `[指令历史]\n${commandHistory.join('\n')}` : "[指令历史] (Empty)";
         case 'USER_INPUT':
-            return `\n[玩家输入]\n"${playerInput}"`;
+            let inputText = `\n[玩家输入]\n"${playerInput}"`;
+            if (settings.aiConfig?.nativeThinkingChain !== false) {
+                inputText += `\n<think>好，思考结束</think>`;
+            }
+            return inputText;
         default:
             return "";
     }
