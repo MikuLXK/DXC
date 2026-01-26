@@ -117,8 +117,8 @@ export const CenterPanel: React.FC<CenterPanelProps> = ({
   const turnIndices = logs
       .map(l => (typeof l.turnIndex === 'number' ? l.turnIndex : null))
       .filter((t): t is number => t !== null);
-  const uniqueTurns = Array.from(new Set(turnIndices)).sort((a, b) => a - b);
-  const playableTurns = uniqueTurns.filter(t => t > 0);
+  const uniqueTurns = Array.from(new Set(turnIndices)).sort((a: number, b: number) => a - b);
+  const playableTurns = uniqueTurns.filter((t: number) => t > 0);
   const orderedTurns = playableTurns.length > 0 ? playableTurns : uniqueTurns;
   const totalTurns = orderedTurns.length;
   const limit = chatLogLimit === null ? null : (typeof chatLogLimit === 'number' ? chatLogLimit : 30);
@@ -402,6 +402,7 @@ export const CenterPanel: React.FC<CenterPanelProps> = ({
                         aiActionAnchor={aiActionAnchor}
                         fontSize={fontSize} 
                         showAiToolbar={showAiToolbar}
+                        isHellMode={isHellMode}
                     />
                 </div>
             );

@@ -255,6 +255,7 @@ export const GameInterface: React.FC<GameInterfaceProps> = ({ onExit, initialSta
                 location={gameState.当前地点} 
                 floor={gameState.当前楼层} 
                 weather={gameState.天气}
+                coords={gameState.世界坐标}
                 isHellMode={isHellMode}
             />
             <div className="flex-1 relative overflow-hidden w-full">

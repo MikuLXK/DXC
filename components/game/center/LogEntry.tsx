@@ -15,6 +15,7 @@ interface LogEntryProps {
   aiActionAnchor?: boolean;
   fontSize?: 'small' | 'medium' | 'large';
   showAiToolbar?: boolean; 
+  isHellMode?: boolean;
 }
 
 export const LogEntryItem: React.FC<LogEntryProps> = ({ 
@@ -27,7 +28,8 @@ export const LogEntryItem: React.FC<LogEntryProps> = ({
     onEditUserLog,
     aiActionAnchor = false,
     fontSize = 'medium',
-    showAiToolbar = false
+    showAiToolbar = false,
+    isHellMode = false
 }) => {
     
     const senderName = log.sender || "System";
@@ -63,7 +65,8 @@ export const LogEntryItem: React.FC<LogEntryProps> = ({
                 {lines.map((line, idx) => {
                     const trimmed = line.trim();
                     if (!trimmed) {
-                        return <div key={idx} className="h-3" />;
+                        // For Narrator, further reduce spacing (h-0.5 is 0.125rem/2px)
+                        return <div key={idx} className={isNarrator ? "h-0.5" : "h-3"} />;
                     }
                     const isJudge = trimmed.startsWith('【判定】');
                     if (isJudge) {
@@ -261,19 +264,39 @@ export const LogEntryItem: React.FC<LogEntryProps> = ({
 
     // --- 2. NARRATOR (旁白/环境描写) ---
     if (isNarrator) {
+        const accentGradient = isHellMode 
+            ? 'from-transparent via-red-900 to-transparent' 
+            : 'from-transparent via-blue-900 to-transparent';
+        const bgGlow = isHellMode ? 'via-red-950/10' : 'via-blue-950/10';
+
         return (
-            <div className="group relative w-full my-6 px-2 md:px-8 animate-in fade-in duration-700">
-                <div className="flex justify-end pr-4 mb-[-10px] relative z-20">
+            <div className="group relative w-full my-8 animate-in fade-in duration-1000">
+                {/* Action Menu - Hover to reveal on Desktop */}
+                <div className="absolute top-0 right-4 z-30 opacity-0 group-hover:opacity-100 transition-opacity">
                     <ActionMenu />
                 </div>
-                <AiActionHeader align="left" />
-                <div className="relative bg-zinc-950/70 border border-blue-900/60 px-5 py-4 shadow-[0_8px_24px_rgba(0,0,0,0.4)] backdrop-blur-sm">
-                    <div className="absolute inset-1 border border-blue-900/30 pointer-events-none" />
-                    {renderDecoratedText(content, `font-serif text-zinc-200 text-justify tracking-wide text-sm md:text-base leading-relaxed`)}
+
+                <div className="flex flex-col items-center">
+                    <AiActionHeader align="center" />
+                    
+                    <div className="relative w-full md:w-[96%] px-4 md:px-4 py-3">
+                        {/* Top Decorative Line */}
+                        <div className={`absolute top-0 left-1/2 -translate-x-1/2 w-[98%] h-px bg-gradient-to-r ${accentGradient} opacity-60`} />
+                        
+                        {/* Ambient Background Glow */}
+                        <div className={`absolute inset-0 bg-gradient-to-b from-transparent ${bgGlow} to-transparent -z-10`} />
+
+                        {/* Content */}
+                        {renderDecoratedText(content, `font-serif text-zinc-300 text-justify tracking-wide text-sm md:text-base leading-relaxed drop-shadow-md`)}
+                        
+                        {/* Bottom Decorative Line */}
+                        <div className={`absolute bottom-0 left-1/2 -translate-x-1/2 w-[98%] h-px bg-gradient-to-r ${accentGradient} opacity-60`} />
+                    </div>
+
+                    <MobileActions align="center" />
+                    <RepairHint align="center" />
+                    <ThinkingBlock align="center" />
                 </div>
-                <MobileActions align="left" />
-                <RepairHint align="left" />
-                <ThinkingBlock align="left" />
             </div>
         );
     }
