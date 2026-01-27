@@ -877,7 +877,7 @@ export const generateSingleModuleContext = (mod: ContextModuleConfig, gameState:
                 inputText += `\n\n- 本次"logs"内的正文**必须${required}字**以上`;
             }
             if (settings.aiConfig?.nativeThinkingChain !== false) {
-                inputText += `\n<think>好，思考结束</think>`;
+                inputText += `\n<think>好，思考结束</think>\n\n接下来以"thinking_pre"作为开头进行思考`;
             }
             return inputText;
         default:
