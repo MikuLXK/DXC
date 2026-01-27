@@ -86,8 +86,8 @@ export interface WritingConfig {
     requiredWordCount: number;
     /** 是否启用写作人称管理 */
     enableNarrativePerspective: boolean;
-    /** 人称模式：'third' 第三人称，'first' 第一人称 */
-    narrativePerspective: 'third' | 'first';
+    /** 人称模式：'third' 第三人称，'first' 第一人称，'second' 第二人称 */
+    narrativePerspective: 'third' | 'first' | 'second';
 }
 
 // --- New Context Management Types (V2) ---
@@ -134,6 +134,7 @@ export interface AppSettings {
   enableActionOptions: boolean; // NEW: Toggle for Action Suggestions
   enableStreaming: boolean; // NEW: Toggle for AI Streaming
   chatLogLimit?: number | null; // UI render limit, null for unlimited
+  apiProtectionEnabled?: boolean;
   promptModules: PromptModule[];
   aiConfig: GlobalAISettings;
   memoryConfig: MemoryConfig;

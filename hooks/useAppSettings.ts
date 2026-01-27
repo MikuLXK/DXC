@@ -24,12 +24,13 @@ const DEFAULT_CONTEXT_CONFIG: ContextConfig = {
     modules: DEFAULT_CONTEXT_MODULES
 };
 
-const DEFAULT_SETTINGS: AppSettings = {
+export const DEFAULT_SETTINGS: AppSettings = {
     backgroundImage: '',
     fontSize: 'medium',
     enableActionOptions: true,
     enableStreaming: true,
     chatLogLimit: 30,
+    apiProtectionEnabled: false,
     promptModules: DEFAULT_PROMPT_MODULES,
     aiConfig: {
         mode: 'unified',

@@ -1,7 +1,9 @@
 ﻿
 import React, { useState, useEffect, useRef } from 'react';
-import { X, Settings as SettingsIcon, LogOut, Save, User, ArrowLeft, ChevronRight, HardDrive, Eye, Cpu, Smartphone, Globe, Brain, Zap, Search, RefreshCw, Download, Plus, Trash2, ToggleLeft, ToggleRight, Edit2, Check, Upload, Database, FileJson, History, FileUp, FileDown, Folder, LayoutList, List, Copy, Code, Clock, ArrowUp, ArrowDown, EyeOff, Radio, Crown, Type, Sword, Server, AlertTriangle, MousePointer2, Activity } from 'lucide-react';
-import { AppSettings, GameState, SaveSlot, PromptModule, PromptUsage } from '../../../types';
+import { X, Settings as SettingsIcon, LogOut, Save, User, ArrowLeft, ChevronRight, HardDrive, Eye, Cpu, Smartphone, Globe, Brain, Zap, Search, RefreshCw, Download, Plus, Trash2, ToggleLeft, ToggleRight, Edit2, Check, Upload, Database, FileJson, History, FileUp, FileDown, Folder, LayoutList, List, Copy, Code, Clock, ArrowUp, ArrowDown, EyeOff, Radio, Crown, Type, Sword, Server, AlertTriangle, MousePointer2, Activity, Shield } from 'lucide-react';
+import { AppSettings, GameState, SaveSlot, PromptModule, PromptUsage, GlobalAISettings } from '../../../types';
+import { DEFAULT_PROMPT_MODULES, assembleFullPrompt } from '../../../utils/ai';
+import { DEFAULT_SETTINGS } from '../../../hooks/useAppSettings';
 import { P5Dropdown } from '../../ui/P5Dropdown';
 import { GAME_SCHEMA_DOCS } from './schemaDocs';
 
@@ -87,6 +89,18 @@ export const SettingsModal: React.FC<SettingsModalProps> = ({
 
   // Storage Management State
   const [storageItems, setStorageItems] = useState<{key: string, size: number, label: string, type: string, details?: string[]}[]>([]);
+  const [storageSummary, setStorageSummary] = useState<{ total: number; cache: number; saves: number; settings: number; api: number }>({
+      total: 0,
+      cache: 0,
+      saves: 0,
+      settings: 0,
+      api: 0
+  });
+  const [contextStats, setContextStats] = useState<{ tokens: number; chars: number; bytes: number }>({
+      tokens: 0,
+      chars: 0,
+      bytes: 0
+  });
   const [logSearch, setLogSearch] = useState('');
 
   // File Import Ref
@@ -133,6 +147,7 @@ export const SettingsModal: React.FC<SettingsModalProps> = ({
 
   const scanStorage = () => {
       const items: {key: string, size: number, label: string, type: string, details?: string[]}[] = [];
+      const summary = { total: 0, cache: 0, saves: 0, settings: 0, api: 0 };
       for(let i=0; i<localStorage.length; i++) {
           const key = localStorage.key(i);
           if(key && (key.startsWith('danmachi_') || key.startsWith('phantom_'))) {
@@ -150,9 +165,12 @@ export const SettingsModal: React.FC<SettingsModalProps> = ({
                       const prompts = Array.isArray(parsed.promptModules) ? parsed.promptModules : [];
                       const active = prompts.filter((m: any) => m && m.isActive).length;
                       const contextMods = Array.isArray(parsed.contextConfig?.modules) ? parsed.contextConfig.modules.length : 0;
+                      const apiSize = new Blob([JSON.stringify(parsed.aiConfig || {})]).size;
                       details.push('提示词模块: ' + prompts.length + ' (启用 ' + active + ')');
                       details.push('上下文模块: ' + contextMods);
                       details.push('背景: ' + (parsed.backgroundImage ? '已保存' : '未保存'));
+                      details.push('API设置: ' + formatBytes(apiSize));
+                      summary.api += apiSize;
                   } catch (e) {}
               } else if (key.includes('save_auto')) {
                   label = `自动存档 (Auto Save ${key.split('_').pop()})`;
@@ -176,16 +194,22 @@ export const SettingsModal: React.FC<SettingsModalProps> = ({
               }
 
               items.push({ key, size, label, type, details: details.length > 0 ? details : undefined });
+              summary.total += size;
+              if (type === 'CACHE') summary.cache += size;
+              if (type === 'SETTINGS') summary.settings += size;
+              if (type === 'SAVE_AUTO' || type === 'SAVE_MANUAL') summary.saves += size;
           }
       }
       // Sort by type then key
       items.sort((a, b) => a.type.localeCompare(b.type) || a.key.localeCompare(b.key));
       setStorageItems(items);
+      setStorageSummary(summary);
   };
 
   useEffect(() => {
       if (currentView === 'STORAGE') {
           scanStorage();
+          refreshContextStats();
       }
   }, [currentView]);
 
@@ -375,6 +399,36 @@ export const SettingsModal: React.FC<SettingsModalProps> = ({
       return `${parseFloat((bytes / Math.pow(k, i)).toFixed(dm))} ${sizes[i]}`;
   };
 
+  const estimateTokens = (text: string) => {
+      if (!text) return 0;
+      const compact = text.replace(/\s+/g, ' ').trim();
+      if (!compact) return 0;
+      const cjkCount = (compact.match(/[\u4E00-\u9FFF]/g) || []).length;
+      const nonCjk = compact.length - cjkCount;
+      return Math.ceil(cjkCount + nonCjk / 4);
+  };
+
+  const buildSettingsWithApi = (apiConfig: GlobalAISettings | null) => {
+      const base = JSON.parse(JSON.stringify(DEFAULT_SETTINGS)) as AppSettings;
+      if (!apiConfig) return { ...base, apiProtectionEnabled: formData.apiProtectionEnabled };
+      return { ...base, aiConfig: apiConfig, apiProtectionEnabled: formData.apiProtectionEnabled };
+  };
+
+  const cloneDefaultPrompts = () => DEFAULT_PROMPT_MODULES.map(m => ({ ...m }));
+
+  const refreshContextStats = () => {
+      try {
+          const prompt = assembleFullPrompt("（用户输入预览）", gameState, formData);
+          setContextStats({
+              chars: prompt.length,
+              bytes: new Blob([prompt]).size,
+              tokens: estimateTokens(prompt)
+          });
+      } catch (e) {
+          setContextStats({ chars: 0, bytes: 0, tokens: 0 });
+      }
+  };
+
   const deleteStorageItem = (key: string) => {
       if (confirm(`确定要删除 ${key} 吗？此操作无法撤销。`)) {
           localStorage.removeItem(key);
@@ -383,8 +437,59 @@ export const SettingsModal: React.FC<SettingsModalProps> = ({
       }
   };
 
+  const clearCache = () => {
+      if (!confirm("确定要清除缓存吗？这将删除除存档与设置以外的临时数据。")) return;
+      const keysToRemove: string[] = [];
+      for(let i=0; i<localStorage.length; i++) {
+          const key = localStorage.key(i);
+          if (!key) continue;
+          const isSave = key.includes('save_auto') || key.includes('save_manual');
+          const isSettings = key === 'danmachi_settings';
+          if ((key.startsWith('danmachi_') || key.startsWith('phantom_')) && !isSave && !isSettings) {
+              keysToRemove.push(key);
+          }
+      }
+      keysToRemove.forEach(k => localStorage.removeItem(k));
+      setTimeout(scanStorage, 50);
+  };
+
+  const clearSaves = () => {
+      if (!confirm("确定要清除所有存档吗？此操作不可撤销。")) return;
+      const keysToRemove: string[] = [];
+      for(let i=0; i<localStorage.length; i++) {
+          const key = localStorage.key(i);
+          if (key && (key.includes('save_auto') || key.includes('save_manual'))) {
+              keysToRemove.push(key);
+          }
+      }
+      keysToRemove.forEach(k => localStorage.removeItem(k));
+      setTimeout(() => {
+          loadSaveSlots();
+          scanStorage();
+      }, 50);
+  };
+
+  const restoreDefaultPrompts = () => {
+      if (!confirm("确认恢复默认提示词？这将覆盖当前提示词模块配置。")) return;
+      const next = { ...formData, promptModules: cloneDefaultPrompts() };
+      setFormData(next);
+      onSaveSettings(next);
+      alert("提示词已恢复为默认配置。");
+  };
+
+  const restoreDefaultSettings = () => {
+      if (!confirm("确认恢复默认设置？这将重置界面与上下文配置。")) return;
+      const preservedApi = formData.apiProtectionEnabled ? formData.aiConfig : null;
+      const next = preservedApi ? buildSettingsWithApi(preservedApi) : buildSettingsWithApi(null);
+      setFormData(next);
+      onSaveSettings(next);
+      alert("设置已恢复为默认配置。");
+  };
+
   const factoryReset = () => {
       if (confirm("⚠️ 危险操作：恢复出厂设置\n\n这将清除所有存档、设置和缓存数据，游戏将重置为初始状态。\n\n确定要继续吗？")) {
+          const keepApi = !!formData.apiProtectionEnabled;
+          const preservedApi = keepApi ? formData.aiConfig : null;
           // Clear only game related keys
           const keysToRemove = [];
           for(let i=0; i<localStorage.length; i++) {
@@ -394,6 +499,10 @@ export const SettingsModal: React.FC<SettingsModalProps> = ({
               }
           }
           keysToRemove.forEach(k => localStorage.removeItem(k));
+          if (keepApi && preservedApi) {
+              const next = buildSettingsWithApi(preservedApi);
+              localStorage.setItem('danmachi_settings', JSON.stringify(next));
+          }
           alert("数据已清除。页面将刷新。");
           window.location.reload();
       }
@@ -505,6 +614,73 @@ export const SettingsModal: React.FC<SettingsModalProps> = ({
               <div className="bg-white border border-zinc-300 p-4 shadow-sm">
                   <div className="flex items-center justify-between mb-4 border-b border-zinc-200 pb-2">
                       <div className="flex items-center gap-2">
+                          <Activity className="text-zinc-500" size={20} />
+                          <h4 className="font-bold text-sm uppercase text-zinc-700">存储与上下文概览</h4>
+                      </div>
+                      <button
+                          onClick={() => { scanStorage(); refreshContextStats(); }}
+                          className="text-xs font-mono text-blue-600 hover:text-blue-800"
+                      >
+                          刷新
+                      </button>
+                  </div>
+                  <div className="grid grid-cols-2 md:grid-cols-3 gap-3 text-xs text-zinc-600">
+                      <div className="bg-zinc-50 border border-zinc-200 p-3">
+                          <div className="text-[10px] uppercase text-zinc-400">总计</div>
+                          <div className="text-sm font-bold text-zinc-800">{formatBytes(storageSummary.total)}</div>
+                      </div>
+                      <div className="bg-zinc-50 border border-zinc-200 p-3">
+                          <div className="text-[10px] uppercase text-zinc-400">存档</div>
+                          <div className="text-sm font-bold text-zinc-800">{formatBytes(storageSummary.saves)}</div>
+                      </div>
+                      <div className="bg-zinc-50 border border-zinc-200 p-3">
+                          <div className="text-[10px] uppercase text-zinc-400">设置</div>
+                          <div className="text-sm font-bold text-zinc-800">{formatBytes(storageSummary.settings)}</div>
+                      </div>
+                      <div className="bg-zinc-50 border border-zinc-200 p-3">
+                          <div className="text-[10px] uppercase text-zinc-400">缓存</div>
+                          <div className="text-sm font-bold text-zinc-800">{formatBytes(storageSummary.cache)}</div>
+                      </div>
+                      <div className="bg-zinc-50 border border-zinc-200 p-3">
+                          <div className="text-[10px] uppercase text-zinc-400">API 设置</div>
+                          <div className="text-sm font-bold text-zinc-800">{formatBytes(storageSummary.api)}</div>
+                      </div>
+                      <div className="bg-zinc-50 border border-zinc-200 p-3">
+                          <div className="text-[10px] uppercase text-zinc-400">上下文估算</div>
+                          <div className="text-sm font-bold text-zinc-800">{contextStats.tokens} tokens</div>
+                          <div className="text-[10px] text-zinc-400">{formatBytes(contextStats.bytes)} · {contextStats.chars} 字符</div>
+                      </div>
+                  </div>
+                  <div className="mt-4 flex items-center justify-between border-t border-zinc-200 pt-3">
+                      <div className="flex items-center gap-2 text-zinc-600 text-xs">
+                          <Shield size={16} className="text-emerald-600" />
+                          <span className="font-bold">API 保护</span>
+                          <span className="text-[10px] text-zinc-400">启用后，清除全部数据时保留 API 设置</span>
+                      </div>
+                      <button
+                          onClick={() => setFormData(prev => ({ ...prev, apiProtectionEnabled: !prev.apiProtectionEnabled }))}
+                          className={`text-2xl transition-colors ${formData.apiProtectionEnabled ? 'text-green-600' : 'text-zinc-300'}`}
+                      >
+                          {formData.apiProtectionEnabled ? <ToggleRight size={32}/> : <ToggleLeft size={32}/>}
+                      </button>
+                  </div>
+              </div>
+
+              <div className="bg-white border border-zinc-300 p-4 shadow-sm">
+                  <div className="flex items-center gap-2 mb-4 border-b border-zinc-200 pb-2">
+                      <Folder className="text-zinc-500" size={20} />
+                      <h4 className="font-bold text-sm uppercase text-zinc-700">快速维护</h4>
+                  </div>
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-3 text-xs">
+                      <button onClick={clearCache} className="py-2 px-3 border border-zinc-300 bg-zinc-50 hover:bg-zinc-100 font-bold uppercase tracking-widest">清除缓存</button>
+                      <button onClick={clearSaves} className="py-2 px-3 border border-zinc-300 bg-zinc-50 hover:bg-zinc-100 font-bold uppercase tracking-widest">清除存档</button>
+                      <button onClick={restoreDefaultPrompts} className="py-2 px-3 border border-zinc-300 bg-zinc-50 hover:bg-zinc-100 font-bold uppercase tracking-widest">恢复默认提示词</button>
+                      <button onClick={restoreDefaultSettings} className="py-2 px-3 border border-zinc-300 bg-zinc-50 hover:bg-zinc-100 font-bold uppercase tracking-widest">恢复默认设置</button>
+                  </div>
+              </div>
+              <div className="bg-white border border-zinc-300 p-4 shadow-sm">
+                  <div className="flex items-center justify-between mb-4 border-b border-zinc-200 pb-2">
+                      <div className="flex items-center gap-2">
                           <Database className="text-zinc-500" size={20} />
                           <h4 className="font-bold text-sm uppercase text-zinc-700">Local Data Explorer</h4>
                       </div>
@@ -532,8 +708,8 @@ export const SettingsModal: React.FC<SettingsModalProps> = ({
               </div>
               <div className="bg-red-50 border border-red-200 p-6">
                   <h4 className="font-bold text-red-700 uppercase flex items-center gap-2 mb-4"><AlertTriangle size={20} /> 危险区域 (Danger Zone)</h4>
-                  <p className="text-xs text-red-600/80 mb-4 leading-relaxed">执行出厂设置将彻底清除浏览器中保存的所有游戏数据，包括所有进度、设置和自定义内容。操作不可逆。</p>
-                  <button onClick={factoryReset} className="w-full py-3 bg-red-600 text-white font-bold uppercase tracking-widest hover:bg-red-700 shadow-md flex items-center justify-center gap-2"><RefreshCw size={18} /> 恢复默认设置 / 清除所有数据</button>
+                  <p className="text-xs text-red-600/80 mb-4 leading-relaxed">执行出厂设置将彻底清除浏览器中保存的所有游戏数据，包括所有进度、设置和自定义内容。操作不可逆。若开启“API 保护”，将保留 API 设置。</p>
+                  <button onClick={factoryReset} className="w-full py-3 bg-red-600 text-white font-bold uppercase tracking-widest hover:bg-red-700 shadow-md flex items-center justify-center gap-2"><RefreshCw size={18} /> 清除全部数据（出厂重置）</button>
               </div>
           </div>
       </div>
@@ -972,7 +1148,7 @@ export const SettingsModal: React.FC<SettingsModalProps> = ({
               <div className="flex items-center justify-between p-4 bg-zinc-50 border border-zinc-200">
                   <div>
                       <h5 className="font-bold text-sm text-black">启用写作人称管理</h5>
-                      <p className="text-[10px] text-zinc-500">开启后，AI 将根据选定的人称模式（第一人称/第三人称）调整叙述风格。</p>
+                      <p className="text-[10px] text-zinc-500">开启后，AI 将根据选定的人称模式（第一/第二/第三人称）调整叙述风格。</p>
                   </div>
                   <button
                       onClick={() => setFormData(prev => ({
@@ -1005,6 +1181,23 @@ export const SettingsModal: React.FC<SettingsModalProps> = ({
                           `}
                       >
                           第一人称
+                      </button>
+                      <button
+                          onClick={() => setFormData(prev => ({
+                              ...prev,
+                              writingConfig: {
+                                  ...prev.writingConfig,
+                                  narrativePerspective: 'second'
+                              }
+                          }))}
+                          className={`py-2 px-4 border-2 font-display uppercase tracking-widest transition-all
+                              ${formData.writingConfig.narrativePerspective === 'second'
+                                  ? 'bg-black text-white border-black shadow-[4px_4px_0_rgba(255,0,0,0.5)]'
+                                  : 'bg-white text-zinc-400 border-zinc-200 hover:border-black hover:text-black'
+                              }
+                          `}
+                      >
+                          第二人称
                       </button>
                       <button
                           onClick={() => setFormData(prev => ({
