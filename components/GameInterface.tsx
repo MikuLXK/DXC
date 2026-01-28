@@ -45,7 +45,7 @@ export const GameInterface: React.FC<GameInterfaceProps> = ({ onExit, initialSta
       gameState, setGameState,
       settings, saveSettings,
       commandQueue, pendingCommands, addToQueue, removeFromQueue,
-      currentOptions, lastAIResponse, lastAIThinking, isProcessing, isStreaming,
+      currentOptions, lastAIResponse, lastAIThinking, isProcessing, isStreaming, isPhoneProcessing, phoneProcessingThreadId, phoneProcessingScope,
       draftInput, setDraftInput,
       memorySummaryState, confirmMemorySummary, applyMemorySummary, cancelMemorySummary,
       handlePlayerAction, handlePlayerInput, handleSendMessage, handleCreateMoment, handleCreatePublicPost, handleCreateThread, handleMarkThreadRead, handleSilentWorldUpdate, handleWaitForPhoneReply,
@@ -253,6 +253,8 @@ export const GameInterface: React.FC<GameInterfaceProps> = ({ onExit, initialSta
                         onOpenSaveManager={() => setActiveModal('SAVE_MANAGER')}
                         isHellMode={isHellMode}
                         hasPhone={hasMagicPhone}
+                        phoneProcessing={isPhoneProcessing}
+                        phoneProcessingScope={phoneProcessingScope}
                     />
                 </div>
             </div>
@@ -401,6 +403,9 @@ export const GameInterface: React.FC<GameInterfaceProps> = ({ onExit, initialSta
             onCreateMoment={(content, imageDesc) => handleCreateMoment(content, imageDesc)}
             onCreatePublicPost={(content, imageDesc, topic) => handleCreatePublicPost(content, imageDesc, topic)}
             onWaitReply={handleWaitForPhoneReply}
+            isPhoneProcessing={isPhoneProcessing}
+            phoneProcessingThreadId={phoneProcessingThreadId}
+            phoneProcessingScope={phoneProcessingScope}
         />
 
         {/* Updated Tasks Modal */}

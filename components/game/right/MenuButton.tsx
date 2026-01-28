@@ -9,9 +9,10 @@ interface MenuButtonProps {
     hoverColorClass: string;
     onClick: () => void;
     disabled?: boolean;
+    indicator?: React.ReactNode;
 }
 
-export const MenuButton: React.FC<MenuButtonProps> = ({ icon, label, delay, colorClass, hoverColorClass, onClick, disabled }) => (
+export const MenuButton: React.FC<MenuButtonProps> = ({ icon, label, delay, colorClass, hoverColorClass, onClick, disabled, indicator }) => (
     <button 
         onClick={disabled ? undefined : onClick}
         disabled={disabled}
@@ -41,5 +42,10 @@ export const MenuButton: React.FC<MenuButtonProps> = ({ icon, label, delay, colo
                 <div className="h-0.5 w-0 bg-white group-hover:w-full transition-all duration-500 ease-out mt-1" />
             </div>
         </div>
+        {indicator && (
+            <div className="absolute top-2 right-2 z-20 pointer-events-none">
+                {indicator}
+            </div>
+        )}
     </button>
 );

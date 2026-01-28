@@ -42,7 +42,16 @@ export const DEFAULT_SETTINGS: AppSettings = {
             npcSync: { provider: 'gemini', baseUrl: '', apiKey: '', modelId: '', forceJsonOutput: false },
             npcBrain: { provider: 'gemini', baseUrl: '', apiKey: '', modelId: '', forceJsonOutput: false },
             phone: { provider: 'gemini', baseUrl: '', apiKey: '', modelId: '', forceJsonOutput: false },
-        }
+        },
+        useServiceOverrides: false,
+        serviceOverridesEnabled: {
+            social: false,
+            world: false,
+            npcSync: false,
+            npcBrain: false,
+            phone: false
+        },
+        multiStageThinking: false
     },
     memoryConfig: DEFAULT_MEMORY_CONFIG,
     contextConfig: DEFAULT_CONTEXT_CONFIG,
@@ -95,14 +104,31 @@ export const useAppSettings = () => {
                   contextConfig = { modules: mergedModules };
               }
 
-              const mergedAiConfig = {
+              let mergedAiConfig = {
                   ...DEFAULT_SETTINGS.aiConfig,
                   ...(parsed.aiConfig || {}),
                   services: {
                       ...DEFAULT_SETTINGS.aiConfig.services,
                       ...(parsed.aiConfig?.services || {})
+                  },
+                  serviceOverridesEnabled: {
+                      ...DEFAULT_SETTINGS.aiConfig.serviceOverridesEnabled,
+                      ...(parsed.aiConfig?.serviceOverridesEnabled || {})
                   }
               };
+              if (mergedAiConfig.useServiceOverrides === undefined && parsed.aiConfig?.mode === 'separate') {
+                  mergedAiConfig = {
+                      ...mergedAiConfig,
+                      useServiceOverrides: true,
+                      serviceOverridesEnabled: {
+                          social: true,
+                          world: true,
+                          npcSync: true,
+                          npcBrain: true,
+                          phone: true
+                      }
+                  };
+              }
 
               setSettings({ 
                   ...DEFAULT_SETTINGS, 

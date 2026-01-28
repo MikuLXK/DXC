@@ -1,6 +1,6 @@
 
 import React from 'react';
-import { Briefcase, Users, ClipboardList, Zap, Settings, Navigation, Smartphone, Globe, Shield, BookOpen, Scroll, Flag, Gem, Brain, Radar, Swords, Archive, HardDrive } from 'lucide-react';
+import { Briefcase, Users, ClipboardList, Zap, Settings, Navigation, Smartphone, Globe, Shield, BookOpen, Scroll, Flag, Gem, Brain, Radar, Swords, Archive, HardDrive, Loader2 } from 'lucide-react';
 import { MenuButton } from './right/MenuButton';
 
 interface RightPanelProps {
@@ -24,6 +24,8 @@ interface RightPanelProps {
     onOpenParty?: () => void;
     isHellMode?: boolean;
     hasPhone?: boolean;
+    phoneProcessing?: boolean;
+    phoneProcessingScope?: 'chat' | 'moment' | 'forum' | 'sync' | null;
 }
 
 export const RightPanel: React.FC<RightPanelProps> = ({ 
@@ -46,7 +48,9 @@ export const RightPanel: React.FC<RightPanelProps> = ({
     onOpenPresent,
     onOpenParty,
     isHellMode,
-    hasPhone = true
+    hasPhone = true,
+    phoneProcessing = false,
+    phoneProcessingScope = null
 }) => {
   // Theme Overrides
   const bgTexture = isHellMode ? 'bg-red-900/10' : 'bg-halftone-blue opacity-10';
@@ -54,6 +58,11 @@ export const RightPanel: React.FC<RightPanelProps> = ({
   const secondaryHover = isHellMode ? 'group-hover:bg-orange-600' : 'group-hover:bg-orange-600'; // Keep orange or change
   const mapHover = isHellMode ? 'group-hover:bg-red-500' : 'group-hover:bg-blue-500';
   const settingsBorder = isHellMode ? 'group-hover:border-red-600' : 'group-hover:border-blue-600';
+  const phoneIndicator = phoneProcessing ? (
+        <div className={`w-5 h-5 rounded-full flex items-center justify-center ${phoneProcessingScope === 'sync' ? 'bg-blue-500' : 'bg-orange-500'} shadow-lg animate-pulse`}>
+            <Loader2 size={12} className="text-white animate-spin" />
+        </div>
+    ) : null;
 
   return (
     <div className="w-full lg:w-[20%] h-full bg-zinc-900/90 backdrop-blur-sm flex flex-col p-3 gap-2 overflow-hidden relative border-l-4 border-black">
@@ -144,6 +153,7 @@ export const RightPanel: React.FC<RightPanelProps> = ({
                 hoverColorClass="group-hover:bg-orange-500 group-hover:border-white"
                 onClick={onOpenPhone}
                 disabled={!hasPhone}
+                indicator={phoneIndicator}
             />
             <MenuButton 
                 label="世界" 

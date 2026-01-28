@@ -10,7 +10,7 @@ export interface AIEndpointConfig {
 }
 
 export interface GlobalAISettings {
-  mode: 'unified' | 'separate';
+  mode?: 'unified' | 'separate';
   unified: AIEndpointConfig;
   services: {
     social: AIEndpointConfig;
@@ -19,6 +19,15 @@ export interface GlobalAISettings {
     npcBrain: AIEndpointConfig;
     phone?: AIEndpointConfig;
   };
+  useServiceOverrides?: boolean;
+  serviceOverridesEnabled?: {
+    social?: boolean;
+    world?: boolean;
+    npcSync?: boolean;
+    npcBrain?: boolean;
+    phone?: boolean;
+  };
+  multiStageThinking?: boolean;
   nativeThinkingChain?: boolean;
 }
 
@@ -162,6 +171,8 @@ export interface AIResponse {
   thinking?: string; // AI思考内容（<thinking>解析结果）
   thinking_pre?: string; // 第一段思考
   thinking_post?: string; // 第二段思考
+  thinking_draft?: string; // 剧情草稿（多重思考）
+  thinking_story?: string; // 完整剧情（多重思考）
   narrative?: string; // Optional for legacy support
   repairNote?: string; // 本地修复提示
   phone_sync_plan?: any; // 手机剧情同步指令（JSON 字段）

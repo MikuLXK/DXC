@@ -2,7 +2,7 @@
 import { useState, useEffect, useRef } from 'react';
 import { GameState, AppSettings, LogEntry, InventoryItem, TavernCommand, ActionOption, PhoneMessage, PhoneThread, PhonePendingMessage, Confidant, MemorySystem, MemoryEntry, SaveSlot, Task, ContextModuleConfig, PhonePost, PhoneAIResponse } from '../types';
 import { createNewGameState } from '../utils/dataMapper';
-import { generateDungeonMasterResponse, generatePhoneResponse, generateWorldInfoResponse, DEFAULT_PROMPT_MODULES, DEFAULT_MEMORY_CONFIG, dispatchAIRequest, generateMemorySummary, extractThinkingBlocks, parseAIResponseText, mergeThinkingSegments } from '../utils/ai';
+import { generateDungeonMasterResponse, generatePhoneResponse, generateWorldInfoResponse, DEFAULT_PROMPT_MODULES, DEFAULT_MEMORY_CONFIG, dispatchAIRequest, generateMemorySummary, extractThinkingBlocks, parseAIResponseText, mergeThinkingSegments, resolveServiceConfig } from '../utils/ai';
 import { P_MEM_S2M, P_MEM_M2L } from '../prompts';
 import { Difficulty } from '../types/enums';
 
@@ -81,7 +81,16 @@ const DEFAULT_SETTINGS: AppSettings = {
             npcSync: { ...DEFAULT_AI_CONFIG },
             npcBrain: { ...DEFAULT_AI_CONFIG },
             phone: { ...DEFAULT_AI_CONFIG },
-        }
+        },
+        useServiceOverrides: false,
+        serviceOverridesEnabled: {
+            social: false,
+            world: false,
+            npcSync: false,
+            npcBrain: false,
+            phone: false
+        },
+        multiStageThinking: false
     },
     writingConfig: {
         enableWordCountRequirement: false,
@@ -189,6 +198,9 @@ export const useGameLogic = (initialState?: GameState, onExitCb?: () => void) =>
     const [lastAIThinking, setLastAIThinking] = useState<string>('');
     const [isProcessing, setIsProcessing] = useState(false);
     const [isStreaming, setIsStreaming] = useState(false);
+    const [isPhoneProcessing, setIsPhoneProcessing] = useState(false);
+    const [phoneProcessingThreadId, setPhoneProcessingThreadId] = useState<string | null>(null);
+    const [phoneProcessingScope, setPhoneProcessingScope] = useState<'chat' | 'moment' | 'forum' | 'sync' | null>(null);
     const [draftInput, setDraftInput] = useState<string>('');
     const [snapshotState, setSnapshotState] = useState<GameState | null>(null);
     const [memorySummaryState, setMemorySummaryState] = useState<MemorySummaryState | null>(null);
@@ -225,14 +237,31 @@ export const useGameLogic = (initialState?: GameState, onExitCb?: () => void) =>
                 const defaultIds = new Set(DEFAULT_PROMPT_MODULES.map(m => m.id));
                 const extraModules = savedModules.filter((m: any) => !defaultIds.has(m.id) && m.id !== 'world_if');
                 const mergedPromptModules = [...mergedDefaults, ...extraModules];
-                const mergedAiConfig = {
+                let mergedAiConfig = {
                     ...DEFAULT_SETTINGS.aiConfig,
                     ...(parsed.aiConfig || {}),
                     services: {
                         ...DEFAULT_SETTINGS.aiConfig.services,
                         ...(parsed.aiConfig?.services || {})
+                    },
+                    serviceOverridesEnabled: {
+                        ...DEFAULT_SETTINGS.aiConfig.serviceOverridesEnabled,
+                        ...(parsed.aiConfig?.serviceOverridesEnabled || {})
                     }
                 };
+                if (mergedAiConfig.useServiceOverrides === undefined && parsed.aiConfig?.mode === 'separate') {
+                    mergedAiConfig = {
+                        ...mergedAiConfig,
+                        useServiceOverrides: true,
+                        serviceOverridesEnabled: {
+                            social: true,
+                            world: true,
+                            npcSync: true,
+                            npcBrain: true,
+                            phone: true
+                        }
+                    };
+                }
                 setSettings({ ...DEFAULT_SETTINGS, ...parsed, promptModules: mergedPromptModules, aiConfig: mergedAiConfig });
             } catch(e) { console.warn("Settings corrupted"); }
         }
@@ -481,10 +510,8 @@ export const useGameLogic = (initialState?: GameState, onExitCb?: () => void) =>
     const isPhoneApiConfigured = (cfg: AppSettings) => {
         const aiCfg = cfg?.aiConfig;
         if (!aiCfg) return false;
-        if (aiCfg.mode === 'separate') {
-            return !!aiCfg.services?.phone?.apiKey;
-        }
-        return !!aiCfg.unified?.apiKey;
+        const resolved = resolveServiceConfig(cfg, 'phone');
+        return !!resolved?.apiKey;
     };
 
     const upsertPhoneThread = (phone: any, threadType: 'private' | 'group' | 'public', title: string, members?: string[]) => {
@@ -1164,6 +1191,9 @@ export const useGameLogic = (initialState?: GameState, onExitCb?: () => void) =>
         if (!localCheck.ok) return;
         if (!isPhoneApiConfigured(settings)) return;
         try {
+            setIsPhoneProcessing(true);
+            setPhoneProcessingThreadId(null);
+            setPhoneProcessingScope('sync');
             const input = `[PHONE_SYNC_PLAN]\n${JSON.stringify(plan)}`;
             const phoneResp = await generatePhoneResponse(input, baseState, settings);
             if (!phoneResp.allowed) return;
@@ -1172,6 +1202,10 @@ export const useGameLogic = (initialState?: GameState, onExitCb?: () => void) =>
             setGameState(nextState);
         } catch (e) {
             console.error('Phone sync plan failed', e);
+        } finally {
+            setIsPhoneProcessing(false);
+            setPhoneProcessingThreadId(null);
+            setPhoneProcessingScope(null);
         }
     };
     const handleSendMessage = async (text: string, thread: PhoneThread) => {
@@ -1231,6 +1265,9 @@ export const useGameLogic = (initialState?: GameState, onExitCb?: () => void) =>
             return;
         }
         try {
+            setIsPhoneProcessing(true);
+            setPhoneProcessingThreadId(thread.id);
+            setPhoneProcessingScope('chat');
             const phoneInput = `[PHONE_CHAT]\n[手机/${channelLabel}] ${otherParty}: ${trimmed}`;
             const phoneResp = await generatePhoneResponse(phoneInput, nextState, settings);
             if (!phoneResp.allowed) {
@@ -1264,6 +1301,10 @@ export const useGameLogic = (initialState?: GameState, onExitCb?: () => void) =>
         } catch (e: any) {
             alert(`手机API调用失败: ${e.message || '未知错误'}`);
             setGameState(prev => appendPhoneMemoryEntries(prev, [`【手机】与${otherParty}聊天：${trimmed}`]));
+        } finally {
+            setIsPhoneProcessing(false);
+            setPhoneProcessingThreadId(null);
+            setPhoneProcessingScope(null);
         }
     };
     const handleEditPhoneMessage = (id: string, content: string) => {
@@ -1360,6 +1401,9 @@ export const useGameLogic = (initialState?: GameState, onExitCb?: () => void) =>
             return;
         }
         try {
+            setIsPhoneProcessing(true);
+            setPhoneProcessingThreadId(null);
+            setPhoneProcessingScope('moment');
             const phoneResp = await generatePhoneResponse(`[PHONE_POST] 我在朋友圈发布动态：${content.trim()}${descText}`, nextState, settings);
             if (!phoneResp.allowed) {
                 alert(phoneResp.blocked_reason || '当前剧情环境无法使用手机');
@@ -1388,6 +1432,10 @@ export const useGameLogic = (initialState?: GameState, onExitCb?: () => void) =>
         } catch (e: any) {
             alert(`手机API调用失败: ${e.message || '未知错误'}`);
             setGameState(prev => appendPhoneMemoryEntries(prev, [`【手机】朋友圈发布：${content.trim()}`]));
+        } finally {
+            setIsPhoneProcessing(false);
+            setPhoneProcessingThreadId(null);
+            setPhoneProcessingScope(null);
         }
     };
     const handleCreatePublicPost = async (content: string, imageDesc?: string, topic?: string) => {
@@ -1432,6 +1480,9 @@ export const useGameLogic = (initialState?: GameState, onExitCb?: () => void) =>
             return;
         }
         try {
+            setIsPhoneProcessing(true);
+            setPhoneProcessingThreadId(null);
+            setPhoneProcessingScope('forum');
             const phoneResp = await generatePhoneResponse(`[PHONE_POST] 我在公共论坛发布帖子：${content.trim()}${descText}${topicText}`, nextState, settings);
             if (!phoneResp.allowed) {
                 alert(phoneResp.blocked_reason || '当前剧情环境无法使用手机');
@@ -1466,6 +1517,10 @@ export const useGameLogic = (initialState?: GameState, onExitCb?: () => void) =>
             alert(`手机API调用失败: ${e.message || '未知错误'}`);
             setGameState(prev => appendPhoneMemoryEntries(prev, [`【手机】论坛发布：${content.trim()}`]));
             handleWorldInfoUpdate(`论坛动态：${content.trim()}`, nextState);
+        } finally {
+            setIsPhoneProcessing(false);
+            setPhoneProcessingThreadId(null);
+            setPhoneProcessingScope(null);
         }
     };
     const handleWaitForPhoneReply = (thread?: PhoneThread | null) => {
@@ -1798,7 +1853,7 @@ export const useGameLogic = (initialState?: GameState, onExitCb?: () => void) =>
 
     return {
         gameState, setGameState, settings, setSettings,
-        commandQueue, pendingCommands, addToQueue, removeFromQueue, currentOptions, lastAIResponse, lastAIThinking, isProcessing, isStreaming, draftInput, setDraftInput,
+        commandQueue, pendingCommands, addToQueue, removeFromQueue, currentOptions, lastAIResponse, lastAIThinking, isProcessing, isStreaming, isPhoneProcessing, phoneProcessingThreadId, phoneProcessingScope, draftInput, setDraftInput,
         memorySummaryState, confirmMemorySummary, applyMemorySummary, cancelMemorySummary,
         handleAIInteraction, stopInteraction, handlePlayerAction, handlePlayerInput, handleSendMessage, handleCreateMoment, handleCreatePublicPost, handleCreateThread, handleMarkThreadRead, handleSilentWorldUpdate, handleWaitForPhoneReply, saveSettings, manualSave, loadGame, updateConfidant, updateMemory,
         handleReroll, handleEditLog, handleDeleteLog, handleEditUserLog, handleUpdateLogText, handleUserRewrite, handleDeleteTask,

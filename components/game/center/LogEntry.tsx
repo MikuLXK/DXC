@@ -249,7 +249,7 @@ export const LogEntryItem: React.FC<LogEntryProps> = ({
         const bgGlow = isHellMode ? 'via-red-950/10' : 'via-blue-950/10';
 
         return (
-            <div className="group relative w-full my-4 animate-in fade-in duration-1000">
+            <div className="group relative w-full my-1 animate-in fade-in duration-1000">
                 {/* Action Menu - Hover to reveal on Desktop */}
                 <div className="absolute top-0 right-4 z-30 opacity-0 group-hover:opacity-100 transition-opacity">
                     <ActionMenu />

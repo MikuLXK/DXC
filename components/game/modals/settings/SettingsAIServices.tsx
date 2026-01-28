@@ -30,8 +30,16 @@ export const SettingsAIServices: React.FC<SettingsAIServicesProps> = ({ settings
         setHasUnsavedChanges(true);
     };
 
-    const handleModeChange = (mode: 'unified' | 'separate') => {
-        setLocalConfig(prev => ({ ...prev, mode }));
+    const handleOverrideToggle = (enabled: boolean) => {
+        setLocalConfig(prev => ({ ...prev, useServiceOverrides: enabled }));
+        setHasUnsavedChanges(true);
+    };
+
+    const handleServiceOverrideToggle = (key: keyof GlobalAISettings['services'], enabled: boolean) => {
+        const nextState = JSON.parse(JSON.stringify(localConfig));
+        if (!nextState.serviceOverridesEnabled) nextState.serviceOverridesEnabled = {};
+        nextState.serviceOverridesEnabled[key] = enabled;
+        setLocalConfig(nextState);
         setHasUnsavedChanges(true);
     };
 
@@ -63,21 +71,25 @@ export const SettingsAIServices: React.FC<SettingsAIServicesProps> = ({ settings
             
             <div className="bg-white p-6 border border-zinc-200 shadow-sm flex-1 overflow-y-auto custom-scrollbar">
                 <div className="mb-6">
-                    <label className="block text-xs font-bold uppercase mb-2 text-zinc-500">API Mode</label>
-                    <div className="flex flex-col md:flex-row gap-4">
-                        <button 
-                            onClick={() => handleModeChange('unified')}
-                            className={`flex-1 py-3 border-2 font-bold uppercase ${localConfig.mode === 'unified' ? 'bg-black text-white border-black' : 'bg-white text-zinc-400 border-zinc-200'}`}
-                        >
-                            Unified (单接口)
-                        </button>
-                        <button 
-                            onClick={() => handleModeChange('separate')}
-                            className={`flex-1 py-3 border-2 font-bold uppercase ${localConfig.mode === 'separate' ? 'bg-black text-white border-black' : 'bg-white text-zinc-400 border-zinc-200'}`}
-                        >
-                            Separate (微服务)
-                        </button>
-                    </div>
+                    <label className="block text-xs font-bold uppercase mb-2 text-zinc-500">主API（默认）</label>
+                    <AIConfigForm 
+                        label="主API配置"
+                        config={localConfig.unified}
+                        onChange={(c) => handleConfigChange(c, 'unified')}
+                    />
+                </div>
+
+                <div className="mb-6 flex items-center gap-3">
+                    <input
+                        type="checkbox"
+                        id="enableServiceOverrides"
+                        checked={localConfig.useServiceOverrides === true}
+                        onChange={e => handleOverrideToggle(e.target.checked)}
+                        className="w-4 h-4 text-red-600 border-zinc-300 rounded focus:ring-red-500"
+                    />
+                    <label htmlFor="enableServiceOverrides" className="text-xs font-bold uppercase text-zinc-600 select-none cursor-pointer">
+                        启用功能独立API（未启用时全部使用主API）
+                    </label>
                 </div>
 
                 <div className="mb-6 flex items-center gap-3">
@@ -96,14 +108,24 @@ export const SettingsAIServices: React.FC<SettingsAIServicesProps> = ({ settings
                         卡原生思维链
                     </label>
                 </div>
-
-                {localConfig.mode === 'unified' ? (
-                    <AIConfigForm 
-                        label="Unified Endpoint Config"
-                        config={localConfig.unified}
-                        onChange={(c) => handleConfigChange(c, 'unified')}
+                <div className="mb-6 flex items-center gap-3">
+                    <input
+                        type="checkbox"
+                        id="multiStageThinking"
+                        checked={localConfig.multiStageThinking === true}
+                        onChange={e => {
+                            const newConfig = { ...localConfig, multiStageThinking: e.target.checked };
+                            setLocalConfig(newConfig);
+                            setHasUnsavedChanges(true);
+                        }}
+                        className="w-4 h-4 text-red-600 border-zinc-300 rounded focus:ring-red-500"
                     />
-                ) : (
+                    <label htmlFor="multiStageThinking" className="text-xs font-bold uppercase text-zinc-600 select-none cursor-pointer">
+                        多重思考（3段：规划/草稿/完整剧情）
+                    </label>
+                </div>
+
+                {localConfig.useServiceOverrides === true ? (
                     <div>
                         <div className="flex border-b border-zinc-200 mb-4 overflow-x-auto">
                             {(['SOCIAL', 'WORLD', 'PHONE', 'NPC_SYNC', 'NPC_BRAIN'] as const).map(tab => (
@@ -116,22 +138,56 @@ export const SettingsAIServices: React.FC<SettingsAIServicesProps> = ({ settings
                                 </button>
                             ))}
                         </div>
-                        
+
                         {activeTab === 'SOCIAL' && (
-                            <AIConfigForm config={localConfig.services.social} onChange={(c) => handleConfigChange(c, 'social')} />
+                            <ServiceOverridePanel
+                                label="社交"
+                                enabled={localConfig.serviceOverridesEnabled?.social === true}
+                                onToggle={(enabled) => handleServiceOverrideToggle('social', enabled)}
+                            >
+                                <AIConfigForm config={localConfig.services.social} onChange={(c) => handleConfigChange(c, 'social')} disabled={localConfig.serviceOverridesEnabled?.social !== true} />
+                            </ServiceOverridePanel>
                         )}
                         {activeTab === 'WORLD' && (
-                            <AIConfigForm config={localConfig.services.world} onChange={(c) => handleConfigChange(c, 'world')} />
+                            <ServiceOverridePanel
+                                label="世界"
+                                enabled={localConfig.serviceOverridesEnabled?.world === true}
+                                onToggle={(enabled) => handleServiceOverrideToggle('world', enabled)}
+                            >
+                                <AIConfigForm config={localConfig.services.world} onChange={(c) => handleConfigChange(c, 'world')} disabled={localConfig.serviceOverridesEnabled?.world !== true} />
+                            </ServiceOverridePanel>
                         )}
                         {activeTab === 'PHONE' && (
-                            <AIConfigForm config={localConfig.services.phone || localConfig.unified} onChange={(c) => handleConfigChange(c, 'phone')} />
+                            <ServiceOverridePanel
+                                label="手机"
+                                enabled={localConfig.serviceOverridesEnabled?.phone === true}
+                                onToggle={(enabled) => handleServiceOverrideToggle('phone', enabled)}
+                            >
+                                <AIConfigForm config={localConfig.services.phone || localConfig.unified} onChange={(c) => handleConfigChange(c, 'phone')} disabled={localConfig.serviceOverridesEnabled?.phone !== true} />
+                            </ServiceOverridePanel>
                         )}
                         {activeTab === 'NPC_SYNC' && (
-                            <AIConfigForm config={localConfig.services.npcSync} onChange={(c) => handleConfigChange(c, 'npcSync')} />
+                            <ServiceOverridePanel
+                                label="NPC 同步"
+                                enabled={localConfig.serviceOverridesEnabled?.npcSync === true}
+                                onToggle={(enabled) => handleServiceOverrideToggle('npcSync', enabled)}
+                            >
+                                <AIConfigForm config={localConfig.services.npcSync} onChange={(c) => handleConfigChange(c, 'npcSync')} disabled={localConfig.serviceOverridesEnabled?.npcSync !== true} />
+                            </ServiceOverridePanel>
                         )}
                         {activeTab === 'NPC_BRAIN' && (
-                            <AIConfigForm config={localConfig.services.npcBrain} onChange={(c) => handleConfigChange(c, 'npcBrain')} />
+                            <ServiceOverridePanel
+                                label="NPC 大脑"
+                                enabled={localConfig.serviceOverridesEnabled?.npcBrain === true}
+                                onToggle={(enabled) => handleServiceOverrideToggle('npcBrain', enabled)}
+                            >
+                                <AIConfigForm config={localConfig.services.npcBrain} onChange={(c) => handleConfigChange(c, 'npcBrain')} disabled={localConfig.serviceOverridesEnabled?.npcBrain !== true} />
+                            </ServiceOverridePanel>
                         )}
+                    </div>
+                ) : (
+                    <div className="text-xs text-zinc-400 italic">
+                        当前未启用功能独立API，所有模块均使用主API配置。
                     </div>
                 )}
             </div>
@@ -139,12 +195,32 @@ export const SettingsAIServices: React.FC<SettingsAIServicesProps> = ({ settings
     );
 };
 
-const AIConfigForm = ({ config, onChange, label }: { config: AIEndpointConfig, onChange: (c: AIEndpointConfig) => void, label?: string }) => {
+const ServiceOverridePanel = ({ label, enabled, onToggle, children }: { label: string; enabled: boolean; onToggle: (enabled: boolean) => void; children: React.ReactNode }) => (
+    <div className="space-y-3">
+        <div className="flex items-center justify-between">
+            <div className="text-xs font-bold uppercase text-zinc-500">功能：{label}</div>
+            <div className="flex items-center gap-2">
+                <input
+                    type="checkbox"
+                    checked={enabled}
+                    onChange={e => onToggle(e.target.checked)}
+                    className="w-4 h-4 text-red-600 border-zinc-300 rounded focus:ring-red-500"
+                />
+                <span className="text-xs font-bold uppercase text-zinc-600">{enabled ? '独立API' : '使用主API'}</span>
+            </div>
+        </div>
+        {children}
+    </div>
+);
+
+const AIConfigForm = ({ config, onChange, label, disabled }: { config: AIEndpointConfig, onChange: (c: AIEndpointConfig) => void, label?: string; disabled?: boolean }) => {
     const [isFetchingModels, setIsFetchingModels] = useState(false);
     const [showModelList, setShowModelList] = useState(false);
     const [fetchedModels, setFetchedModels] = useState<string[]>([]);
+    const isDisabled = disabled === true;
 
     const handleFetchModels = async () => {
+        if (isDisabled) return;
         if (!config.apiKey) {
             alert("请先输入 API Key");
             return;
@@ -190,7 +266,7 @@ const AIConfigForm = ({ config, onChange, label }: { config: AIEndpointConfig, o
     };
 
     return (
-        <div className="space-y-4 bg-white/50 p-4 border border-zinc-300 relative">
+        <div className={`space-y-4 bg-white/50 p-4 border border-zinc-300 relative ${isDisabled ? 'opacity-60' : ''}`}>
             {label && <h4 className="font-display uppercase text-lg text-black">{label}</h4>}
             
             <div>
@@ -200,7 +276,8 @@ const AIConfigForm = ({ config, onChange, label }: { config: AIEndpointConfig, o
                          <button 
                             key={p}
                             onClick={() => onChange({...config, provider: p as any, baseUrl: p === 'gemini' ? 'https://generativelanguage.googleapis.com' : p === 'openai' ? 'https://api.openai.com/v1' : p === 'deepseek' ? 'https://api.deepseek.com/v1' : ''})}
-                            className={`px-4 py-2 text-sm font-bold uppercase border-2 ${config.provider === p ? 'bg-black text-white border-black' : 'bg-white text-zinc-400 border-zinc-200'}`}
+                            disabled={isDisabled}
+                            className={`px-4 py-2 text-sm font-bold uppercase border-2 ${config.provider === p ? 'bg-black text-white border-black' : 'bg-white text-zinc-400 border-zinc-200'} ${isDisabled ? 'cursor-not-allowed' : ''}`}
                          >
                             {p}
                          </button>
@@ -215,7 +292,7 @@ const AIConfigForm = ({ config, onChange, label }: { config: AIEndpointConfig, o
                     onChange={e => onChange({...config, baseUrl: e.target.value})}
                     className="w-full bg-white border-b-2 border-zinc-400 p-2 font-mono text-sm text-black focus:border-red-600 outline-none"
                     placeholder={config.provider === 'custom' ? "Enter custom base URL..." : "Default URL"}
-                    disabled={config.provider !== 'custom'}
+                    disabled={isDisabled || config.provider !== 'custom'}
                 />
             </div>
             <div>
@@ -226,6 +303,7 @@ const AIConfigForm = ({ config, onChange, label }: { config: AIEndpointConfig, o
                     onChange={e => onChange({...config, apiKey: e.target.value})}
                     className="w-full bg-white border-b-2 border-zinc-400 p-2 font-mono text-sm text-black focus:border-red-600 outline-none"
                     placeholder="sk-..."
+                    disabled={isDisabled}
                 />
             </div>
             <div className="relative">
@@ -237,10 +315,11 @@ const AIConfigForm = ({ config, onChange, label }: { config: AIEndpointConfig, o
                         onChange={e => onChange({...config, modelId: e.target.value})}
                         className="flex-1 bg-white border-b-2 border-zinc-400 p-2 font-mono text-sm text-black focus:border-red-600 outline-none"
                         placeholder="model-id"
+                        disabled={isDisabled}
                     />
                     <button 
                         onClick={handleFetchModels} 
-                        disabled={isFetchingModels}
+                        disabled={isFetchingModels || isDisabled}
                         className="bg-black text-white px-3 py-1 hover:bg-red-600 transition-colors disabled:opacity-50"
                         title="获取模型列表"
                     >
@@ -255,6 +334,7 @@ const AIConfigForm = ({ config, onChange, label }: { config: AIEndpointConfig, o
                         checked={config.forceJsonOutput || false}
                         onChange={e => onChange({...config, forceJsonOutput: e.target.checked})}
                         className="w-4 h-4 text-red-600 border-zinc-300 rounded focus:ring-red-500"
+                        disabled={isDisabled}
                     />
                     <label htmlFor={`force-json-${label || 'config'}`} className="text-xs font-bold uppercase text-zinc-600 select-none cursor-pointer">
                         强制 JSON 输出

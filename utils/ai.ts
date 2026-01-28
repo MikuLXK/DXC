@@ -10,7 +10,8 @@ import {
     P_DIFFICULTY_EASY, P_DIFFICULTY_NORMAL, P_DIFFICULTY_HARD, P_DIFFICULTY_HELL,
     P_JUDGMENT_EASY, P_JUDGMENT_NORMAL, P_JUDGMENT_HARD, P_JUDGMENT_HELL,
     P_ACTION_OPTIONS, P_FAMILIA_JOIN, P_STORY_GUIDE,
-    P_PHONE_SYSTEM, P_PHONE_COT
+    P_PHONE_SYSTEM, P_PHONE_COT,
+    P_SYS_FORMAT_MULTI, P_COT_LOGIC_MULTI
 } from "../prompts";
 import { Difficulty } from "../types/enums";
 
@@ -19,6 +20,7 @@ import { Difficulty } from "../types/enums";
 export const DEFAULT_PROMPT_MODULES: PromptModule[] = [
     // 【系统设定】
     { id: 'sys_format', name: '1. 输出格式', group: '系统设定', usage: 'CORE', isActive: true, content: P_SYS_FORMAT, order: 1 },
+    { id: 'sys_format_multi', name: '1. 输出格式(多重思考)', group: '系统设定', usage: 'CORE', isActive: true, content: P_SYS_FORMAT_MULTI, order: 1 },
     { id: 'sys_core', name: '2. 核心规则', group: '系统设定', usage: 'CORE', isActive: true, content: P_SYS_CORE, order: 2 },
     { id: 'sys_data_struct', name: '3. 数据格式', group: '系统设定', usage: 'CORE', isActive: true, content: P_DATA_STRUCT, order: 3 },
     { id: 'sys_writing', name: '4. 写作要求', group: '系统设定', usage: 'CORE', isActive: true, content: P_WRITING_REQ, order: 4 },
@@ -50,6 +52,7 @@ export const DEFAULT_PROMPT_MODULES: PromptModule[] = [
 
     // 【COT思维链】
     { id: 'cot_logic', name: '1. 核心思维链', group: 'COT思维链', usage: 'CORE', isActive: true, content: P_COT_LOGIC, order: 0 },
+    { id: 'cot_logic_multi', name: '1. 核心思维链(多重思考)', group: 'COT思维链', usage: 'CORE', isActive: true, content: P_COT_LOGIC_MULTI, order: 0 },
 
     // 【判定系统】(随难度切换)
     { id: 'judge_easy', name: '判定系统-轻松', group: '判定系统', usage: 'CORE', isActive: false, content: P_JUDGMENT_EASY, order: 15 },
@@ -92,12 +95,21 @@ export const DEFAULT_MEMORY_CONFIG: MemoryConfig = {
 const isCotModule = (mod: PromptModule) => mod.id === 'cot_logic' || mod.group === 'COT思维链';
 
 const buildCotPrompt = (settings: AppSettings): string => {
+    const multiStage = settings.aiConfig?.multiStageThinking === true;
     const modules = settings.promptModules
-        .filter(m => isCotModule(m) && m.isActive)
-        .sort((a, b) => a.order - b.order);
+        .filter(m => isCotModule(m));
     if (modules.length === 0) return "";
-    return modules.map(m => m.content).join('\n\n');
+    if (multiStage) {
+        const multi = modules.find(m => m.id === 'cot_logic_multi');
+        if (multi && multi.isActive !== false) return multi.content;
+        return P_COT_LOGIC_MULTI;
+    }
+    const base = modules.find(m => m.id === 'cot_logic');
+    if (base && base.isActive !== false) return base.content;
+    const fallback = modules.find(m => m.isActive);
+    return fallback ? fallback.content : "";
 };
+
 
 export const extractThinkingBlocks = (rawText: string): { cleaned: string; thinking?: string } => {
     if (!rawText) return { cleaned: rawText };
@@ -120,12 +132,16 @@ export const normalizeThinkingField = (value?: unknown): string => {
 export const mergeThinkingSegments = (response?: Partial<AIResponse>): string => {
     if (!response) return "";
     const thinkingPre = normalizeThinkingField((response as any).thinking_pre);
+    const thinkingDraft = normalizeThinkingField((response as any).thinking_draft);
+    const thinkingStory = normalizeThinkingField((response as any).thinking_story);
     const thinkingPost = normalizeThinkingField((response as any).thinking_post);
     const thinkingLegacy = normalizeThinkingField((response as any).thinking);
     const segments: string[] = [];
     if (thinkingPre) segments.push(`[思考-前]\n${thinkingPre}`);
+    if (thinkingDraft) segments.push(`[思考-草稿]\n${thinkingDraft}`);
+    if (thinkingStory) segments.push(`[思考-完整]\n${thinkingStory}`);
     if (thinkingPost) segments.push(`[思考-后]\n${thinkingPost}`);
-    if (!thinkingPre && !thinkingPost && thinkingLegacy) segments.push(thinkingLegacy);
+    if (!thinkingPre && !thinkingPost && !thinkingDraft && !thinkingStory && thinkingLegacy) segments.push(thinkingLegacy);
     return segments.join('\n\n').trim();
 };
 
@@ -613,6 +629,28 @@ const constructPhoneWorldBrief = (gameState: GameState): string => {
     return `[世界情报摘要]\n头条: ${news.length > 0 ? news.join(' / ') : '无'}\n传闻: ${rumors.length > 0 ? rumors.join(' / ') : '无'}`;
 };
 
+const constructPhoneWorldview = (settings: AppSettings): string => {
+    const modules = (settings.promptModules || [])
+        .filter(m => m.group === '世界观设定' && m.isActive)
+        .sort((a, b) => (a.order ?? 0) - (b.order ?? 0));
+    if (modules.length === 0) return '';
+    return `[世界观设定]\n${modules.map(m => m.content).join('\n\n')}`;
+};
+
+const constructPhoneMemoryBrief = (memory: MemorySystem | undefined): string => {
+    if (!memory) return '';
+    const short = Array.isArray(memory.shortTerm) ? memory.shortTerm.slice(-8) : [];
+    const medium = Array.isArray(memory.mediumTerm) ? memory.mediumTerm.slice(-4) : [];
+    const long = Array.isArray(memory.longTerm) ? memory.longTerm.slice(-2) : [];
+    if (short.length === 0 && medium.length === 0 && long.length === 0) return '';
+    const shortText = short.length > 0
+        ? short.map(s => `${s.timestamp || ''} ${s.content}`.trim()).join(' | ')
+        : '无';
+    const mediumText = medium.length > 0 ? medium.join(' | ') : '无';
+    const longText = long.length > 0 ? long.join(' | ') : '无';
+    return `[记忆摘要]\n短期: ${shortText}\n中期: ${mediumText}\n长期: ${longText}`;
+};
+
 export const assemblePhonePrompt = (
     playerInput: string,
     gameState: GameState,
@@ -624,13 +662,17 @@ export const assemblePhonePrompt = (
     const envBrief = constructPhoneEnvironmentBrief(gameState);
     const storyBrief = constructPhoneStoryBrief(gameState);
     const worldBrief = constructPhoneWorldBrief(gameState);
+    const worldview = constructPhoneWorldview(settings);
+    const memoryBrief = constructPhoneMemoryBrief(gameState.记忆);
     const cot = P_PHONE_COT || "";
     return [
         P_PHONE_SYSTEM,
         cot,
+        worldview,
         envBrief,
         storyBrief,
         worldBrief,
+        memoryBrief,
         trackingBrief,
         socialBrief,
         phoneContext,
@@ -795,7 +837,7 @@ export const generateSingleModuleContext = (mod: ContextModuleConfig, gameState:
                 ? true 
                 : mapData.surfaceLocations.some(l => l.floor === currentFloor);
             
-            const activePromptModules = settings.promptModules.filter(m => {
+            let activePromptModules = settings.promptModules.filter(m => {
                 if (!m.isActive) {
                     // Difficulty / Physiology Logic
                     if (m.group === '难度系统' || m.group === '生理系统' || m.group === '判定系统') {
@@ -817,6 +859,17 @@ export const generateSingleModuleContext = (mod: ContextModuleConfig, gameState:
                 if (m.usage === 'START' && isStart) return true;
                 return false;
             });
+
+            const multiStage = settings.aiConfig?.multiStageThinking === true;
+            if (multiStage) {
+                activePromptModules = activePromptModules.filter(m => m.id !== 'sys_format');
+                const multiFormat = settings.promptModules.find(m => m.id === 'sys_format_multi');
+                if (multiFormat && multiFormat.isActive !== false && !activePromptModules.includes(multiFormat)) {
+                    activePromptModules = [...activePromptModules, multiFormat];
+                }
+            } else {
+                activePromptModules = activePromptModules.filter(m => m.id !== 'sys_format_multi');
+            }
             
             const filteredModules = activePromptModules.filter(m => !isCotModule(m));
             const groupPriority = [
@@ -1041,7 +1094,6 @@ export const assembleFullPrompt = (
     if (cotContent) {
         fullContent += cotContent + "\n\n";
     }
-
     appendModules('COMMAND_HISTORY');
     appendModules('USER_INPUT');
 
@@ -1051,7 +1103,10 @@ export const assembleFullPrompt = (
 export const resolveServiceConfig = (settings: AppSettings, serviceKey: string): AIEndpointConfig => {
     const aiConfig = settings.aiConfig;
     if (!aiConfig) return { provider: 'gemini', baseUrl: 'https://generativelanguage.googleapis.com', apiKey: '', modelId: 'gemini-3-flash-preview' };
-    if (aiConfig.mode === 'separate') {
+    const overridesEnabled = aiConfig.useServiceOverrides ?? aiConfig.mode === 'separate';
+    const overrideFlags = aiConfig.serviceOverridesEnabled || {};
+    const serviceEnabled = (overrideFlags as any)?.[serviceKey] ?? (aiConfig.mode === 'separate');
+    if (overridesEnabled && serviceEnabled) {
         const service = (aiConfig.services as any)?.[serviceKey];
         if (service && service.apiKey) return service as AIEndpointConfig;
     }

@@ -26,14 +26,17 @@ const BodyPartRow = ({ label, data }: { label: string, data: BodyPartStats }) =>
 
     return (
         <div className="flex items-center gap-2 text-[10px] uppercase font-bold text-zinc-400">
-            <span className="w-8 text-right shrink-0">{label}</span>
+            <span className="w-10 text-right shrink-0">{label}</span>
             <div className="flex-1 h-2 bg-zinc-900 border border-zinc-700 relative overflow-hidden">
                 <div 
                     className={`h-full ${colorClass} transition-all duration-500`} 
                     style={{ width: `${percent}%` }} 
                 />
             </div>
-            <span className="w-6 font-mono text-white text-right">{Math.round(percent)}%</span>
+            <div className="w-14 text-right font-mono leading-tight">
+                <div className="text-[9px] text-zinc-200">{Math.max(0, 当前)}/{Math.max(0, 最大)}</div>
+                <div className="text-[9px] text-zinc-500">{Math.round(percent)}%</div>
+            </div>
         </div>
     );
 };
@@ -178,16 +181,17 @@ export const LeftPanel: React.FC<LeftPanelProps> = ({ stats, className = '', isH
                           <Scan size={10} /> 生理监测 (PHYSIOLOGY)
                       </div>
                       <div className="space-y-1.5">
-                          <BodyPartRow label="HEAD" data={stats.身体部位.头部} />
-                          <BodyPartRow label="CHEST" data={stats.身体部位.胸部} />
+                          <BodyPartRow label="头部" data={stats.身体部位.头部} />
+                          <BodyPartRow label="胸部" data={stats.身体部位.胸部} />
+                          <BodyPartRow label="腹部" data={stats.身体部位.腹部} />
                           <div className="flex gap-2">
                               <div className="flex-1 space-y-1">
-                                  <BodyPartRow label="L.ARM" data={stats.身体部位.左臂} />
-                                  <BodyPartRow label="L.LEG" data={stats.身体部位.左腿} />
+                                  <BodyPartRow label="左臂" data={stats.身体部位.左臂} />
+                                  <BodyPartRow label="左腿" data={stats.身体部位.左腿} />
                               </div>
                               <div className="flex-1 space-y-1">
-                                  <BodyPartRow label="R.ARM" data={stats.身体部位.右臂} />
-                                  <BodyPartRow label="R.LEG" data={stats.身体部位.右腿} />
+                                  <BodyPartRow label="右臂" data={stats.身体部位.右臂} />
+                                  <BodyPartRow label="右腿" data={stats.身体部位.右腿} />
                               </div>
                           </div>
                       </div>
@@ -219,16 +223,17 @@ export const LeftPanel: React.FC<LeftPanelProps> = ({ stats, className = '', isH
                           <Scan size={10} /> 生理监测 (PHYSIOLOGY)
                       </div>
                       <div className="space-y-1.5">
-                          <BodyPartRow label="HEAD" data={stats.身体部位.头部} />
-                          <BodyPartRow label="CHEST" data={stats.身体部位.胸部} />
+                          <BodyPartRow label="头部" data={stats.身体部位.头部} />
+                          <BodyPartRow label="胸部" data={stats.身体部位.胸部} />
+                          <BodyPartRow label="腹部" data={stats.身体部位.腹部} />
                           <div className="flex gap-2">
                               <div className="flex-1 space-y-1">
-                                  <BodyPartRow label="L.ARM" data={stats.身体部位.左臂} />
-                                  <BodyPartRow label="L.LEG" data={stats.身体部位.左腿} />
+                                  <BodyPartRow label="左臂" data={stats.身体部位.左臂} />
+                                  <BodyPartRow label="左腿" data={stats.身体部位.左腿} />
                               </div>
                               <div className="flex-1 space-y-1">
-                                  <BodyPartRow label="R.ARM" data={stats.身体部位.右臂} />
-                                  <BodyPartRow label="R.LEG" data={stats.身体部位.右腿} />
+                                  <BodyPartRow label="右臂" data={stats.身体部位.右臂} />
+                                  <BodyPartRow label="右腿" data={stats.身体部位.右腿} />
                               </div>
                           </div>
                       </div>

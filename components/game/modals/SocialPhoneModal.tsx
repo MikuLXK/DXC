@@ -1,6 +1,6 @@
 ﻿
 import React, { useEffect, useMemo, useRef, useState } from 'react';
-import { X, MessageCircle, Users, Send, BookUser, Camera, ChevronRight, Heart, MessageSquare, ArrowLeft, Plus, Check, Image as ImageIcon, Clock, Lock, Battery, Signal, Edit2, Trash2, Globe } from 'lucide-react';
+import { X, MessageCircle, Users, Send, BookUser, Camera, ChevronRight, Heart, MessageSquare, ArrowLeft, Plus, Check, Image as ImageIcon, Clock, Lock, Battery, Signal, Edit2, Trash2, Globe, Loader2 } from 'lucide-react';
 import { PhoneState, PhoneThread, PhoneMessage, PhonePost, Confidant, NpcBackgroundTracking } from '../../../types';
 import { getAvatarColor } from '../../../utils/uiUtils';
 
@@ -21,6 +21,9 @@ interface SocialPhoneModalProps {
   onCreatePublicPost?: (content: string, imageDesc?: string, topic?: string) => void;
   onReadThread?: (threadId: string) => void;
   onWaitReply?: (thread: PhoneThread) => void;
+  isPhoneProcessing?: boolean;
+  phoneProcessingThreadId?: string | null;
+  phoneProcessingScope?: 'chat' | 'moment' | 'forum' | 'sync' | null;
 }
 
 type PhoneTab = 'CHAT' | 'CONTACTS' | 'MOMENTS' | 'FORUM';
@@ -51,7 +54,10 @@ export const SocialPhoneModal: React.FC<SocialPhoneModalProps> = ({
   onCreateMoment,
   onCreatePublicPost,
   onReadThread,
-  onWaitReply
+  onWaitReply,
+  isPhoneProcessing = false,
+  phoneProcessingThreadId = null,
+  phoneProcessingScope = null
 }) => {
   const phone = phoneState || DEFAULT_PHONE;
   const [activeTab, setActiveTab] = useState<PhoneTab>(initialTab);
@@ -113,6 +119,22 @@ export const SocialPhoneModal: React.FC<SocialPhoneModalProps> = ({
     if (!activeThreadId) return null;
     return getThreadList(chatType).find(t => t.id === activeThreadId) || null;
   }, [activeThreadId, chatType, phoneState]);
+
+  const showPhoneProcessing = !!isPhoneProcessing;
+  const isActiveThreadProcessing = showPhoneProcessing
+    && phoneProcessingScope === 'chat'
+    && !!activeThread
+    && activeThread.id === phoneProcessingThreadId;
+  const processingLabel = useMemo(() => {
+    if (!showPhoneProcessing) return '';
+    if (phoneProcessingScope === 'moment') return '动态已提交，AI处理中…';
+    if (phoneProcessingScope === 'forum') return '帖子已提交，AI处理中…';
+    if (phoneProcessingScope === 'sync') return '剧情联动处理中…';
+    if (phoneProcessingScope === 'chat') {
+      return isActiveThreadProcessing ? '已提交消息，等待AI回复…' : 'AI正在处理手机消息…';
+    }
+    return 'AI处理中…';
+  }, [showPhoneProcessing, phoneProcessingScope, isActiveThreadProcessing]);
 
   useEffect(() => {
     if (isOpen) {
@@ -349,6 +371,13 @@ export const SocialPhoneModal: React.FC<SocialPhoneModalProps> = ({
               <div className="text-xs text-zinc-400 leading-relaxed">
                 背包内未找到魔石通讯终端。请在物品中携带该设备以启用手机功能。
               </div>
+            </div>
+          )}
+
+          {showPhoneProcessing && (
+            <div className="px-3 py-2 bg-blue-50 text-blue-700 text-[10px] font-bold uppercase tracking-widest border-b border-blue-100 flex items-center gap-2">
+              <Loader2 size={12} className="animate-spin" />
+              <span className="truncate">{processingLabel}</span>
             </div>
           )}
 
