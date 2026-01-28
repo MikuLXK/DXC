@@ -1,4 +1,5 @@
-﻿﻿export const P_DATA_STRUCT = `# 【数据结构定义】DanMachi SaveData (V3.1 Chinese Native)
+export const P_DATA_STRUCT = `<数据结构定义>
+# 【数据结构定义】DanMachi SaveData (V3.1 Chinese Native)
 
 > 本文档定义了游戏状态树的**完整**结构。AI 在生成 \`tavern_commands\` 时必须**严格遵守**此路径和字段定义。
 > 所有的 Key 必须使用**中文**。禁止删除、精简或臆造字段。
@@ -12,7 +13,6 @@
 - \`gameState.当前楼层\`: Number (0=地表, 1+=地下层数)
 - \`gameState.天气\`: String ("晴朗", "小雨" 等)
 - \`gameState.世界坐标\`: { "x": Number, "y": Number } (绝对坐标)
-
 
 ## 2. 玩家状态核心 (gameState.角色)
 **基础信息**
@@ -239,8 +239,7 @@
 - \`gameState.眷族.资金\`: Number
 - \`gameState.眷族.设施状态\`: Object
 - \`gameState.眷族.仓库\`: Array<InventoryItem>
-
-`;
+</数据结构定义>`;
 
 
 

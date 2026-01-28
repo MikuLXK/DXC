@@ -1,7 +1,9 @@
 
-export const P_START_REQ = ``;
+export const P_START_REQ = `<剧情起始>
+</剧情起始>`;
 
-export const P_STORY_GUIDE = `【剧情导演系统 (Story Director)】
+export const P_STORY_GUIDE = `<剧情导演系统>
+【剧情导演系统 (Story Director)】
 你是《地城邂逅》的脚本家。请根据 \`gameState.剧情\` 的新结构，主动引导故事发展。
 
 1. **结构读取 (Story Snapshot)**:
@@ -38,4 +40,5 @@ export const P_STORY_GUIDE = `【剧情导演系统 (Story Director)】
 
 5. **动态引导 (Dynamic Guidance)**:
    - **弱引导**：通过 NPC 闲聊、公会公告、街头传闻暗示路线。
-   - **强引导**：关键剧情（如怪物祭暴走）时使用强制事件将玩家卷入。`;
+   - **强引导**：关键剧情（如怪物祭暴走）时使用强制事件将玩家卷入。
+</剧情导演系统>`;

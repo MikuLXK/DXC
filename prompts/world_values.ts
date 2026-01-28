@@ -1,5 +1,6 @@
 
-export const P_WORLD_VALUES = `# 冒险者能力评级标准 (Adventurer Status Standard)
+export const P_WORLD_VALUES = `<冒险者能力评级标准>
+# 冒险者能力评级标准 (Adventurer Status Standard)
 
 - **核心概念**：冒险者的战斗力由 **基本能力(I-S)** + **等级加成(Level Bonus)** 共同决定。
 - **等级压制**：Lv.2 的 I0 远强于 Lv.1 的 S999。下表仅为同等级下的数值概念参考。
@@ -64,4 +65,5 @@ export const P_WORLD_VALUES = `# 冒险者能力评级标准 (Adventurer Status 
 ## 称号 (Alias)
 - 只有达到 **Lv.2** 并经过诸神大会（Denatus）讨论后才会获得称号。
 - 称号往往反映了众神的恶趣味（如"未完新人"）或冒险者的特征（如"剑姬"）。
-- 获得称号是声望达到"都市话题"级的标志。`;
+- 获得称号是声望达到"都市话题"级的标志。
+</冒险者能力评级标准>`;

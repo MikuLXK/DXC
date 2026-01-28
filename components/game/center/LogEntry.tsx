@@ -1,7 +1,7 @@
 
 import React from 'react';
 import { LogEntry, CharacterStats, Confidant } from '../../../types';
-import { Edit2, Terminal, Trash2, Info, Sparkles } from 'lucide-react';
+import { Edit2, Terminal, Trash2, Sparkles } from 'lucide-react';
 import { getAvatarColor } from '../../../utils/uiUtils';
 
 interface LogEntryProps {
@@ -47,7 +47,6 @@ export const LogEntryItem: React.FC<LogEntryProps> = ({
     const canDeleteUser = isPlayer && !!onDelete;
     const hasInlineActions = canEditUser || canDeleteUser;
     const hasActions = showAiActions || hasInlineActions;
-    const shouldShowThinking = !!log.thinking && !isPlayer;
 
     const getTextSize = () => {
         switch(fontSize) {
@@ -89,22 +88,6 @@ export const LogEntryItem: React.FC<LogEntryProps> = ({
         );
     };
 
-    const ThinkingBlock = ({ align }: { align: 'left' | 'right' | 'center' }) => {
-        if (!shouldShowThinking) return null;
-        const alignClass = align === 'right' ? 'justify-end' : align === 'center' ? 'justify-center' : 'justify-start';
-        return (
-            <div className={`mt-2 flex ${alignClass}`}>
-                <details className="max-w-[90%] bg-emerald-950/40 border border-emerald-700/60 px-3 py-2 rounded">
-                    <summary className="cursor-pointer text-[10px] uppercase tracking-widest text-emerald-300 flex items-center gap-2">
-                        <Info size={12} className="text-emerald-400" /> AI 思考
-                    </summary>
-                    <div className="mt-2 text-[11px] text-emerald-100 font-mono whitespace-pre-wrap leading-relaxed">
-                        {log.thinking}
-                    </div>
-                </details>
-            </div>
-        );
-    };
 
     const RepairHint = ({ align }: { align: 'left' | 'right' | 'center' }) => {
         if (!log.repairNote) return null;
@@ -256,7 +239,6 @@ export const LogEntryItem: React.FC<LogEntryProps> = ({
                     </div>
                     <MobileActions align="center" />
                     <RepairHint align="center" />
-                    <ThinkingBlock align="center" />
                 </div>
             </div>
         );
@@ -267,7 +249,7 @@ export const LogEntryItem: React.FC<LogEntryProps> = ({
         const bgGlow = isHellMode ? 'via-red-950/10' : 'via-blue-950/10';
 
         return (
-            <div className="group relative w-full my-8 animate-in fade-in duration-1000">
+            <div className="group relative w-full my-4 animate-in fade-in duration-1000">
                 {/* Action Menu - Hover to reveal on Desktop */}
                 <div className="absolute top-0 right-4 z-30 opacity-0 group-hover:opacity-100 transition-opacity">
                     <ActionMenu />
@@ -287,7 +269,6 @@ export const LogEntryItem: React.FC<LogEntryProps> = ({
 
                     <MobileActions align="center" />
                     <RepairHint align="center" />
-                    <ThinkingBlock align="center" />
                 </div>
             </div>
         );
@@ -354,7 +335,6 @@ export const LogEntryItem: React.FC<LogEntryProps> = ({
                     </div>
                     <MobileActions align="left" />
                     <RepairHint align="left" />
-                    <ThinkingBlock align="left" />
                 </div>
             </div>
         </div>

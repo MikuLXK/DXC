@@ -1,5 +1,6 @@
 
-export const P_FAMILIA_JOIN = `【眷族系统 (Familia System)】
+export const P_FAMILIA_JOIN = `<眷族系统>
+【眷族系统 (Familia System)】
 目前玩家尚未加入眷族 (所属眷族: 无)。
 
 1. **核心目标**: 
@@ -17,4 +18,4 @@ export const P_FAMILIA_JOIN = `【眷族系统 (Familia System)】
      - \`set gameState.眷族.等级 "I"\` (初始等级)
      - \`set gameState.眷族.资金 0\`
      - \`add gameState.任务[0].状态 "completed"\` (如果当前任务是加入眷族)
-`;
+</眷族系统>`;

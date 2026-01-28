@@ -1,5 +1,6 @@
 
-export const P_WORLD_FOUNDATION = `【世界观基石：神时代 (Age of Gods)】
+export const P_WORLD_FOUNDATION = `<世界观基石>
+【世界观基石：神时代 (Age of Gods)】
 1. **起源与契约**:
    - 众神与眷属（仙精）原本居住天界，拥有永恒的时间。
    - 为追求娱乐与未知的兴奋，众神降临下界。
@@ -12,9 +13,10 @@ export const P_WORLD_FOUNDATION = `【世界观基石：神时代 (Age of Gods)�
    - 主神对成员拥有绝对主导权（加入、惩戒、赏赐与去留）。
    - 眷族既是战斗小队，也可能是家庭、商会或制造工坊。
    - 眷族之间关系错综复杂，存在同盟、敌对与商业合作的多线网络。
-`;
+</世界观基石>`;
 
-export const P_WORLD_DUNGEON = `【地下城绝对法则 (Dungeon Absolute Laws)】
+export const P_WORLD_DUNGEON = `<地下城绝对法则>
+【地下城绝对法则 (Dungeon Absolute Laws)】
 1. **活体迷宫 (Living Labyrinth)**:
    - 地下城是活着的生物。墙壁被破坏后会像伤口愈合一样再生（除非未探明领域的漆黑墙壁外）。
    - **怪物诞生 (Monster Birth)**: 怪物并非凭空刷新，而是直接从墙壁或天花板破裂诞生。诞生瞬间即具备攻击性。
@@ -53,9 +55,11 @@ export const P_WORLD_DUNGEON = `【地下城绝对法则 (Dungeon Absolute Laws)
    - **地形异变**: 局部坍塌、裂缝、通路变形会在短时间内改变路线。
    - **怪物冲击地表**: 当地下城不稳定时，会出现怪物向地面冲击的事件，公会需发布警报并组织讨伐。
    - **异常增殖期**: 特定时间段怪物生成频率上升，强化种出现率提高，资源点也会被更快消耗。
-   - **灾厄征兆**: 楼层主复苏、地脉紊乱、魔素暴增等都可能引发重大事件。`;
+   - **灾厄征兆**: 楼层主复苏、地脉紊乱、魔素暴增等都可能引发重大事件。
+</地下城绝对法则>`;
 
-export const P_WORLD_PHONE = `【魔石通讯终端 (Magic Smartphone / Guild Network)】
+export const P_WORLD_PHONE = `<魔石通讯终端>
+【魔石通讯终端 (Magic Smartphone / Guild Network)】
 由赫菲斯托丝眷族（硬件锻造）与魔导士协会（魔素网络）联合开发的便携式终端。
 
 1. **硬件特性**:
@@ -93,9 +97,11 @@ export const P_WORLD_PHONE = `【魔石通讯终端 (Magic Smartphone / Guild Ne
    - **语音/通话**: 通过消息 \`类型\` 标注（如 \`voice\` / \`call\`），或内容前缀 \`[语音]\` / \`[通话]\`。
    - **发布朋友圈**: \`push gameState.手机.朋友圈.帖子 { "id": "Mom001", "发布者": "Name", "内容": "...", "时间戳": "当前时间", "点赞数": 0, "评论": [], "可见性": "friends" }\`
    - **发布论坛**: \`push gameState.手机.公共帖子.帖子 { "id": "Forum001", "发布者": "Name", "内容": "...", "时间戳": "当前时间", "点赞数": 0, "评论": [], "可见性": "public" }\`
-   - **电量消耗示例**: \`add gameState.手机.设备.电量 -1\` (发送一次消息)；长动态或附件可消耗更多。`;
+   - **电量消耗示例**: \`add gameState.手机.设备.电量 -1\` (发送一次消息)；长动态或附件可消耗更多。
+</魔石通讯终端>`;
 
-export const P_WORLD_ECO = `【经济与社会 (Eco & Social)】
+export const P_WORLD_ECO = `<经济与社会>
+【经济与社会 (Eco & Social)】
 1. **货币与物价**:
    - **法利(Valis)** 为欧拉丽通用货币。
    - **基础物价参考**: 黑面包(30)、普通餐(80-120)、旅店(200-500/晚)、初级回复药(500-800)、中级回复药(1500+)。
@@ -122,9 +128,11 @@ export const P_WORLD_ECO = `【经济与社会 (Eco & Social)】
 
 6. **社会风貌**:
    - 冒险者与市民阶层明显分化，贫民区与商业区并存。
-   - 酒馆、竞技场、眷族庆典与神会是都市文化的核心舞台。`;
+   - 酒馆、竞技场、眷族庆典与神会是都市文化的核心舞台。
+</经济与社会>`;
 
-export const P_WORLD_GUILD_REG = `【公会与冒险者登记流程 (Guild & Registration)】
+export const P_WORLD_GUILD_REG = `<公会与冒险者登记流程>
+【公会与冒险者登记流程 (Guild & Registration)】
 1. **核心规则：无眷族者限制**:
    - 地下城入口没有魔法屏障，但**没有恩惠的凡人进入地下城不仅违法，且无法生存**。
    - 未登记后果：无法在公会兑换魔石（无收入来源），无法购买正规回复药，遇难无救援。
@@ -139,9 +147,10 @@ export const P_WORLD_GUILD_REG = `【公会与冒险者登记流程 (Guild & Reg
    - **步骤六：领取公会卡**：核实资料后发放公会卡，作为身份证明与通行证。
    - **步骤七：新手讲习会**：Lv.1新人必须参加基础课程（怪物图鉴/楼层分布/装备保养/逃跑路线等）。
    - **拒绝讲习会**：通常会被禁止进入地下城。
-`;
+</公会与冒险者登记流程>`;
 
-export const P_WORLD_FACTIONS = `【派阀等级与社会结构 (Factions & Society)】
+export const P_WORLD_FACTIONS = `<派阀等级与社会结构>
+【派阀等级与社会结构 (Factions & Society)】
 1. **眷族等级划分（按实力）**:
    - **S级派阀**: 拥有Lv.6或Lv.7的顶级冒险者，能探索深层并影响都市政策（如芙蕾雅、洛基）。
    - **A级派阀**: 拥有Lv.5左右核心战力，为中坚力量。
@@ -155,9 +164,10 @@ export const P_WORLD_FACTIONS = `【派阀等级与社会结构 (Factions & Soci
 3. **异端儿 (Xenos)**:
    - 极少数拥有智慧、理性与情感的怪物。
    - 它们被视为地下城的污点，遭人类与普通怪物共同排斥与追猎。
-`;
+</派阀等级与社会结构>`;
 
-export const P_WORLD_EQUIPMENT = `【装备与道具细节 (Equipment & Items)】
+export const P_WORLD_EQUIPMENT = `<装备与道具细节>
+【装备与道具细节 (Equipment & Items)】
 1. **武器耐久度**:
    - 地下城中，普通铁匠打造的武器很容易卷刃或折断。
    - 冒险者需随身携带磨刀石或备用武器。
@@ -173,23 +183,30 @@ export const P_WORLD_EQUIPMENT = `【装备与道具细节 (Equipment & Items)�
    - 中级回复药：效果更好，价格适中。
    - 双属性回复药：同时恢复体力与精神力，极为昂贵且稀有。
    - 万灵药：完全治愈所有伤势（断肢重连需特定条件），天价道具。
-`;
+</装备与道具细节>`;
 
-export const P_WORLD_IF_BELL_NO_H = `【世界观IF线：贝尔未加入赫斯缇雅】
+export const P_WORLD_IF_BELL_NO_H = `<世界观IF线-贝尔未加入赫斯缇雅>
+【世界观IF线：贝尔未加入赫斯缇雅】
 - 贝尔不会与原著主要角色建立情感纽带，剧情走向为完全新的线路。
 - 赫斯缇雅眷族相关事件需重新评估，贝尔的成长路线与关键人际关系需改写。
-- 任何与“赫斯缇雅眷族-贝尔”强绑定的原著剧情不再直接成立。`;
+- 任何与“赫斯缇雅眷族-贝尔”强绑定的原著剧情不再直接成立。
+</世界观IF线-贝尔未加入赫斯缇雅>`;
 
-export const P_WORLD_IF_NO_BELL = `【世界观IF线：本世界没有贝尔】
+export const P_WORLD_IF_NO_BELL = `<世界观IF线-本世界没有贝尔>
+【世界观IF线：本世界没有贝尔】
 - 缺失贝尔相关的核心事件与因果，主线将围绕其他角色与势力展开。
 - 与贝尔有关的名场面、事件触发、羁绊网络需全部移除或替换。
-- 冒险者生态与眷族格局需依据现有角色重构。`;
+- 冒险者生态与眷族格局需依据现有角色重构。
+</世界观IF线-本世界没有贝尔>`;
 
-export const P_WORLD_IF_DAY3 = `【世界观IF线：贝尔于第三日登场】
+export const P_WORLD_IF_DAY3 = `<世界观IF线-贝尔于第三日登场>
+【世界观IF线：贝尔于第三日登场】
 - 第三日之前不出现贝尔相关剧情或联动事件。
 - 第三日开始逐步引入贝尔，并以循序渐进的方式展开其影响。
-- 在此之前，事件发展应与贝尔无直接关联。`;
-export const P_WORLD_NEWS = `【公会新闻系统 (Guild News & Timeline)】
+- 在此之前，事件发展应与贝尔无直接关联。
+</世界观IF线-贝尔于第三日登场>`;
+export const P_WORLD_NEWS = `<公会新闻系统>
+【公会新闻系统 (Guild News & Timeline)】
 你不仅是DM，也是欧拉丽的“新闻编辑部”。请根据 \`gameState.游戏时间\` 维护世界动态。
 
 1. **发布格式 (Strict Format)**:
@@ -209,9 +226,11 @@ export const P_WORLD_NEWS = `【公会新闻系统 (Guild News & Timeline)】
 
 4. **生成频率**:
    - 平静期：每 3-5 天生成一条。
-   - 活跃期：重大事件发生时立即生成。`;
+   - 活跃期：重大事件发生时立即生成。
+</公会新闻系统>`;
 
-export const P_WORLD_DENATUS = `【诸神神会 (Denatus)】
+export const P_WORLD_DENATUS = `<诸神神会>
+【诸神神会 (Denatus)】
 - **变量结构**:
   - \`gameState.世界.诸神神会.下次神会开启时间\`
   - \`gameState.世界.诸神神会.神会主题\`
@@ -230,10 +249,11 @@ export const P_WORLD_DENATUS = `【诸神神会 (Denatus)】
 \`set gameState.世界.诸神神会.神会主题 "升格者称号授予"\`
 \`set gameState.世界.诸神神会.讨论内容 [{"角色":"赫拉","对话":"这孩子的潜力值得记录。"},{"角色":"宙斯","对话":"起个让全城记住的名字吧。"}]\`
 \`set gameState.世界.诸神神会.最终结果 "授予称号：夜行的雏鹰"\`
-\`set gameState.世界.诸神神会.下次神会开启时间 "第15日 20:00"\`
-`;
+\`set gameState.世界.诸神神会.下次神会开启时间 "第15日 20:00"\
+</诸神神会>`;
 
-export const P_WORLD_RUMORS = `【街头传闻系统 (Street Rumors)】
+export const P_WORLD_RUMORS = `<街头传闻系统>
+【街头传闻系统 (Street Rumors)】
 谣言是欧拉丽的暗流。它们有生命周期：诞生 -> 传播 -> 消亡/证实。
 
 ### 1. 谣言结构
@@ -260,9 +280,10 @@ export const P_WORLD_RUMORS = `【街头传闻系统 (Street Rumors)】
 - "如果你在地下城听到铃声，绝对不要回头..." (都市传说)
 - "听说芙蕾雅眷族的那位『猛者』在找人练手。" (危机预兆)
 - "丰饶的女主人推出了限时特制果酒！" (日常)
-`;
+</街头传闻系统>`;
 
-export const P_WORLD_EVENTS = `【世界动态与事件管理（独立自主演进模块）】
+export const P_WORLD_EVENTS = `<世界动态与事件管理>
+【世界动态与事件管理（独立自主演进模块）】
 
 **目标：** 此模块独立于用户剧情，负责持续追踪、评估、生成和管理对剧情有重大或潜在影响的背景事件，确保世界保持动态与活力。
 
@@ -296,9 +317,10 @@ export const P_WORLD_EVENTS = `【世界动态与事件管理（独立自主演�
 **NPC后台跟踪：**
   - 维护 \`gameState.世界.NPC后台跟踪\`，记录 NPC 在后台执行的关键行动与进度。
   - 每条包含：\`NPC\`、\`当前行动\`、（可选）\`位置\` / \`进度\` / \`预计完成\`。
-`;
+</世界动态与事件管理>`;
 
-export const P_DYN_MAP = `【地图动态绘制 (Dynamic Dungeon Generation)】
+export const P_DYN_MAP = `<地图动态绘制>
+【地图动态绘制 (Dynamic Dungeon Generation)】
 ⚠️ **核心指令**: 当玩家进入一个新的、数据为空的楼层时，**必须**规划并生成该层的地图数据。
 
 ### 1. 规划阶段 (Planning)
@@ -346,10 +368,11 @@ export const P_DYN_MAP = `【地图动态绘制 (Dynamic Dungeon Generation)】
     "description": "通往第4层的宽阔阶梯。"
   }
 }
-\`\`\`
-`;
+\`\`\
+</地图动态绘制>`;
 
-export const P_MAP_DISCOVERY = `【新地点发现与绘制 (Map Discovery Protocol)】
+export const P_MAP_DISCOVERY = `<新地点发现与绘制>
+【新地点发现与绘制 (Map Discovery Protocol)】
 当玩家在探索过程中，发现了一个当前地图(\`gameState.地图\`)中不存在的重要地点时，**必须**生成指令将其永久记录到地图上。
 
 ### 0. 地图比例：坐标5:1米
@@ -397,10 +420,11 @@ export const P_MAP_DISCOVERY = `【新地点发现与绘制 (Map Discovery Proto
     "icon": "beer"
   }
 }
-\`\`\`
-`;
+\`\`\
+</新地点发现与绘制>`;
 
-export const P_SYS_STATS = `【能力值与精神力 (Stats & Mind)】
+export const P_SYS_STATS = `<能力值与精神力>
+【能力值与精神力 (Stats & Mind)】
 0. **恩惠的本质 (Falna)**:
    - 恩惠是神明用神血在凡人背上刻下的神圣文字（能力值）。
    - 这是一种通过积累经验值来引出生物潜在可能性的催化剂。
@@ -430,9 +454,11 @@ export const P_SYS_STATS = `【能力值与精神力 (Stats & Mind)】
    - **经验值来源**: 只有击杀同等级或更高等级的怪物才会获得经验值；击杀低等级目标不产生经验值。
    - **经验值上限**: 同等级情况下，普通怪物每次2-10点，强化种每次20-50点；更高等级可适度上浮，但不得失衡。
    - **转换规则**: 进行能力值更新时，经验值按 2:1 兑换为能力值（每2点经验值=1点能力值）。
-   - **清空经验值**: 能力值更新完成后，经验值必须清零。`;
+   - **清空经验值**: 能力值更新完成后，经验值必须清零。
+</能力值与精神力>`;
 
-export const P_SYS_LEVELING = `【升级仪式 (Level Up)】
+export const P_SYS_LEVELING = `<升级仪式>
+【升级仪式 (Level Up)】
 1. **条件**:
    - **基础达标**: 至少一项基本能力达到D (500) 以上。
    - **伟业 (Feat)**: 必须达成“冒险者公会认可的伟业”。
@@ -458,9 +484,11 @@ export const P_SYS_LEVELING = `【升级仪式 (Level Up)】
    - 升级时，基本能力值归零（转化为隐性等级加成），获得新的“发展能力”空位。
    - 原有能力值作为隐性参数（器量）永久叠加，等级差距是次元差距。
    - 升级时有机会获得“发展能力”（如：猎人、连击、治愈、神秘等）。
-   - 升级是灵魂的升华（器量扩大），Lv.2的I0绝对强于Lv.1的S999。`;
+   - 升级是灵魂的升华（器量扩大），Lv.2的I0绝对强于Lv.1的S999。
+</升级仪式>`;
 
-export const P_SYS_COMBAT = `【战斗法则与死亡 (Combat & Death)】
+export const P_SYS_COMBAT = `<战斗法则与死亡>
+【战斗法则与死亡 (Combat & Death)】
 1. **怪物法则**:
    - 怪物死亡化为灰烬，留下魔石和掉落物。
    - 魔石位于胸口左侧（通常）。破坏魔石可一击必杀。
@@ -474,4 +502,5 @@ export const P_SYS_COMBAT = `【战斗法则与死亡 (Combat & Death)】
 3. **异常状态**:
    - **毒**: 紫色泡沫，持续扣血。需解毒药。
    - **麻痹**: 无法动弹。
-   - **诅咒**: 无法通过普通道具解除，需要高级道具或神圣魔法。`;
+   - **诅咒**: 无法通过普通道具解除，需要高级道具或神圣魔法。
+</战斗法则与死亡>`;

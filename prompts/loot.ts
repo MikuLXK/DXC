@@ -1,5 +1,6 @@
-﻿
-export const P_LOOT_SYSTEM = `【战利品管理法则 (Loot & Distribution)】
+
+export const P_LOOT_SYSTEM = `<战利品管理法则>
+【战利品管理法则 (Loot & Distribution)】
 
 在地下城探索中，物品管理遵循以下规则：
 
@@ -34,4 +35,5 @@ export const P_LOOT_SYSTEM = `【战利品管理法则 (Loot & Distribution)】
 
 5. **魔剑与装备格式 (Magic Sword & Equipment)**:
    - 魔剑仍归类为 \`类型: "weapon"\`，并补充 \`魔剑\` 字段（魔法名称/属性/剩余次数/最大次数等）。
-   - 普通装备请补充 \`武器\` 或 \`防具\` 子结构，便于后续 UI 展示与判定。`;
+   - 普通装备请补充 \`武器\` 或 \`防具\` 子结构，便于后续 UI 展示与判定。
+</战利品管理法则>`;

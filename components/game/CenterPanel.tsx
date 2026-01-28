@@ -1,7 +1,7 @@
 
 import React, { useState, useRef, useEffect, useLayoutEffect } from 'react';
 import { LogEntry, CombatState, CharacterStats, Skill, MagicSpell, InventoryItem, Confidant, ActionOption } from '../../types';
-import { MessageSquare, Sword, Eye, Loader2, ChevronRight, MousePointer2, Terminal, Layers, ChevronUp } from 'lucide-react';
+import { MessageSquare, Sword, Eye, Loader2, ChevronRight, MousePointer2, Terminal, Layers, ChevronUp, Info } from 'lucide-react';
 import { CombatPanel } from './CombatPanel';
 import { LogEntryItem } from './center/LogEntry';
 import { GameInput } from './center/GameInput';
@@ -134,6 +134,12 @@ export const CenterPanel: React.FC<CenterPanelProps> = ({
   const aiActionSeen = new Set<string>();
   const logIndexMap = new Map<string, number>();
   logs.forEach((log, idx) => logIndexMap.set(log.id, idx));
+  const turnThinkingMap = new Map<number, string>();
+  logs.forEach((log) => {
+      if (typeof log.turnIndex === 'number' && log.thinking && !turnThinkingMap.has(log.turnIndex)) {
+          turnThinkingMap.set(log.turnIndex, log.thinking);
+      }
+  });
 
   const handleJump = () => {
       const target = parseInt(jumpTarget, 10);
@@ -265,6 +271,21 @@ export const CenterPanel: React.FC<CenterPanelProps> = ({
           </div>
       );
   };
+  const TurnThinking = ({ thinking }: { thinking?: string }) => {
+      if (!thinking) return null;
+      return (
+          <div className="flex justify-center -mt-2 mb-6">
+              <details className="max-w-[90%] bg-emerald-950/40 border border-emerald-700/60 px-3 py-2 rounded">
+                  <summary className="cursor-pointer text-[10px] uppercase tracking-widest text-emerald-300 flex items-center gap-2">
+                      <Info size={12} className="text-emerald-400" /> AI 思考
+                  </summary>
+                  <div className="mt-2 text-[11px] text-emerald-100 font-mono whitespace-pre-wrap leading-relaxed">
+                      {thinking}
+                  </div>
+              </details>
+          </div>
+      );
+  };
 
   if (combatState.是否战斗中 && showCombatUI && enableCombatUI) {
       return (
@@ -391,6 +412,7 @@ export const CenterPanel: React.FC<CenterPanelProps> = ({
             return (
                 <div key={log.id} ref={(el) => setLogRef(log.id, el)}>
                     {isNewTurn && <TurnDivider turn={log.turnIndex} />}
+                    {isNewTurn && <TurnThinking thinking={log.turnIndex !== undefined ? turnThinkingMap.get(log.turnIndex) : undefined} />}
                     <LogEntryItem 
                         log={log} 
                         isLatest={globalIndex === logs.length - 1} 
