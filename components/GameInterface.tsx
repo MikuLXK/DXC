@@ -36,6 +36,7 @@ import { NotesModal } from './game/modals/NotesModal';
 
 import { useGameLogic } from '../hooks/useGameLogic';
 import { buildPreviewState } from '../utils/previewState';
+import { resolveLocationHierarchy } from '../utils/mapSystem';
 import { getDefaultEquipSlot } from '../utils/itemUtils';
 import { computeInventoryWeight, computeMaxCarry } from '../utils/characterMath';
 
@@ -138,6 +139,10 @@ export const GameInterface: React.FC<GameInterfaceProps> = ({ onExit, initialSta
       () => buildPreviewState(gameState, activeCommands as any),
       [gameState, activeCommands]
   );
+  const locationHierarchy = useMemo(
+      () => resolveLocationHierarchy(gameState.地图, gameState.当前地点),
+      [gameState.地图, gameState.当前地点]
+  );
 
   const activeTaskCount = (gameState.任务 || []).filter(t => t.状态 === 'active').length;
   const unreadPhoneCount = (gameState.手机?.对话
@@ -201,7 +206,8 @@ export const GameInterface: React.FC<GameInterfaceProps> = ({ onExit, initialSta
         <div className="hidden md:flex flex-col h-full">
             <TopNav 
                 time={gameState.游戏时间} 
-                location={gameState.当前地点} 
+                location={gameState.当前地点}
+                locationHierarchy={locationHierarchy}
                 floor={gameState.当前楼层} 
                 weather={gameState.天气} 
                 coords={gameState.世界坐标}
@@ -258,7 +264,8 @@ export const GameInterface: React.FC<GameInterfaceProps> = ({ onExit, initialSta
         <div className="md:hidden flex flex-col h-full w-full">
             <MobileTopNav 
                 time={gameState.游戏时间} 
-                location={gameState.当前地点} 
+                location={gameState.当前地点}
+                locationHierarchy={locationHierarchy}
                 floor={gameState.当前楼层} 
                 weather={gameState.天气}
                 coords={gameState.世界坐标}

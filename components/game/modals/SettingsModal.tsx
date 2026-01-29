@@ -102,6 +102,7 @@ export const SettingsModal: React.FC<SettingsModalProps> = ({
       bytes: 0
   });
   const [logSearch, setLogSearch] = useState('');
+  const [libraryMode, setLibraryMode] = useState<'UI' | 'JSON'>('UI');
 
   // File Import Ref
   const fileInputRef = useRef<HTMLInputElement>(null);
@@ -1324,42 +1325,130 @@ export const SettingsModal: React.FC<SettingsModalProps> = ({
       return (
           <div className="space-y-6 animate-in slide-in-from-right-8 duration-300">
               <SectionHeader title="资料库" icon={<Database />} />
+              <div className="flex items-center gap-3 px-6 md:px-0">
+                  <button
+                      onClick={() => setLibraryMode('UI')}
+                      className={`px-4 py-2 text-xs font-bold uppercase border-2 transition-all ${libraryMode === 'UI' ? 'bg-black text-white border-black' : 'bg-white text-zinc-500 border-zinc-300 hover:border-black'}`}
+                  >
+                      UI 模式
+                  </button>
+                  <button
+                      onClick={() => setLibraryMode('JSON')}
+                      className={`px-4 py-2 text-xs font-bold uppercase border-2 transition-all ${libraryMode === 'JSON' ? 'bg-black text-white border-black' : 'bg-white text-zinc-500 border-zinc-300 hover:border-black'}`}
+                  >
+                      变量结构
+                  </button>
+              </div>
+              {libraryMode === 'JSON' ? (
+                  <div className="bg-white border border-zinc-300 p-4 shadow-sm">
+                      <div className="text-xs font-bold uppercase text-zinc-600 mb-2">完整变量结构 (Map)</div>
+                      <pre className="text-[10px] text-zinc-800 font-mono bg-zinc-50 border border-zinc-200 p-3 max-h-[70vh] overflow-auto whitespace-pre-wrap">
+                          {JSON.stringify({ 地图: mapData }, null, 2)}
+                      </pre>
+                  </div>
+              ) : (
+              <div className="space-y-6">
+              <div className="grid grid-cols-1 md:grid-cols-4 gap-3">
+                  <div className="bg-white border border-zinc-300 p-4 shadow-sm text-xs">
+                      <div className="text-zinc-500 uppercase font-bold">大地图</div>
+                      <div className="text-2xl font-display text-black">{macro.length}</div>
+                  </div>
+                  <div className="bg-white border border-zinc-300 p-4 shadow-sm text-xs">
+                      <div className="text-zinc-500 uppercase font-bold">中地点</div>
+                      <div className="text-2xl font-display text-black">{mid.length}</div>
+                  </div>
+                  <div className="bg-white border border-zinc-300 p-4 shadow-sm text-xs">
+                      <div className="text-zinc-500 uppercase font-bold">小地点</div>
+                      <div className="text-2xl font-display text-black">{small.length}</div>
+                  </div>
+                  <div className="bg-white border border-zinc-300 p-4 shadow-sm text-xs">
+                      <div className="text-zinc-500 uppercase font-bold">地下城层段</div>
+                      <div className="text-2xl font-display text-black">{dungeonStructure.length}</div>
+                  </div>
+              </div>
               <div className="bg-white border border-zinc-300 p-4 shadow-sm space-y-2 text-xs text-zinc-700">
                   <div className="font-bold text-zinc-800">上下文插入条件</div>
-                  <div>• 大地图/中地点：地表时默认输出名称/坐标/区域范围。</div>
+                  <div>• 大地图/中地点：常驻上下文，输出名称/坐标/描述/大小/建筑清单。</div>
                   <div>• 小地点：仅当角色进入对应小地点时，才插入完整布局、房间与家具。</div>
                   <div>• 地下城：仅当玩家输入包含地图关键词且明确写出“第N层/ N层”，并且 N = 当前楼层时插入该层完整地图。</div>
               </div>
-              <div className="bg-white border border-zinc-300 p-4 shadow-sm">
-                  <div className="text-xs font-bold uppercase text-zinc-600 mb-2">完整地图数据</div>
-                  <pre className="text-[10px] text-zinc-800 font-mono bg-zinc-50 border border-zinc-200 p-3 max-h-96 overflow-auto whitespace-pre-wrap">
-                      {JSON.stringify(mapData, null, 2)}
-                  </pre>
+              <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
+                  <div className="bg-white border border-zinc-300 p-4 shadow-sm text-xs">
+                      <div className="text-xs font-bold uppercase text-zinc-600 mb-2">大地图</div>
+                      <div className="max-h-64 overflow-auto space-y-2">
+                          {macro.length === 0 && <div className="text-zinc-400 italic">暂无数据</div>}
+                          {macro.map(item => (
+                              <div key={item.id} className="border border-zinc-200 p-2">
+                                  <div className="font-bold text-black">{item.name}</div>
+                                  <div className="text-[10px] text-zinc-500">坐标: {item.coordinates?.x}, {item.coordinates?.y}</div>
+                                  <div className="text-[10px] text-zinc-500">规模: {item.size?.width ?? '-'} × {item.size?.height ?? '-'} {item.size?.unit || 'm'}</div>
+                                  <div className="text-[10px] text-zinc-500">建筑: {item.buildings?.length || 0}</div>
+                                  {item.description && <div className="text-[10px] text-zinc-600 mt-1">{item.description}</div>}
+                              </div>
+                          ))}
+                      </div>
+                  </div>
+                  <div className="bg-white border border-zinc-300 p-4 shadow-sm text-xs">
+                      <div className="text-xs font-bold uppercase text-zinc-600 mb-2">中地点</div>
+                      <div className="max-h-64 overflow-auto space-y-2">
+                          {mid.length === 0 && <div className="text-zinc-400 italic">暂无数据</div>}
+                          {mid.map(item => (
+                              <div key={item.id} className="border border-zinc-200 p-2">
+                                  <div className="font-bold text-black">{item.name}</div>
+                                  <div className="text-[10px] text-zinc-500">归属: {macro.find(m => m.id === item.parentId)?.name || item.parentId}</div>
+                                  <div className="text-[10px] text-zinc-500">坐标: {item.coordinates?.x}, {item.coordinates?.y}</div>
+                                  <div className="text-[10px] text-zinc-500">建筑: {item.buildings?.length || 0}</div>
+                                  {item.description && <div className="text-[10px] text-zinc-600 mt-1">{item.description}</div>}
+                              </div>
+                          ))}
+                      </div>
+                  </div>
+                  <div className="bg-white border border-zinc-300 p-4 shadow-sm text-xs">
+                      <div className="text-xs font-bold uppercase text-zinc-600 mb-2">小地点</div>
+                      <div className="max-h-64 overflow-auto space-y-2">
+                          {small.length === 0 && <div className="text-zinc-400 italic">暂无数据</div>}
+                          {small.map(item => (
+                              <div key={item.id} className="border border-zinc-200 p-2">
+                                  <div className="font-bold text-black">{item.name}</div>
+                                  <div className="text-[10px] text-zinc-500">归属: {mid.find(m => m.id === item.parentId)?.name || item.parentId}</div>
+                                  {item.description && <div className="text-[10px] text-zinc-600 mt-1">{item.description}</div>}
+                              </div>
+                          ))}
+                      </div>
+                  </div>
               </div>
-              <div className="bg-white border border-zinc-300 p-4 shadow-sm">
-                  <div className="text-xs font-bold uppercase text-zinc-600 mb-2">建筑/室内数据 (小地点)</div>
-                  <pre className="text-[10px] text-zinc-800 font-mono bg-zinc-50 border border-zinc-200 p-3 max-h-96 overflow-auto whitespace-pre-wrap">
-                      {JSON.stringify(small, null, 2)}
-                  </pre>
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+                  <div className="bg-white border border-zinc-300 p-4 shadow-sm text-xs">
+                      <div className="text-xs font-bold uppercase text-zinc-600 mb-2">地下城结构</div>
+                      <div className="max-h-64 overflow-auto space-y-2">
+                          {dungeonStructure.length === 0 && <div className="text-zinc-400 italic">暂无数据</div>}
+                          {dungeonStructure.map((layer, idx) => (
+                              <div key={idx} className="border border-zinc-200 p-2">
+                                  <div className="font-bold text-black">{layer.name}</div>
+                                  <div className="text-[10px] text-zinc-500">楼层: {layer.floorStart} - {layer.floorEnd}</div>
+                                  <div className="text-[10px] text-zinc-500">危险度: {layer.dangerLevel}</div>
+                                  {layer.description && <div className="text-[10px] text-zinc-600 mt-1">{layer.description}</div>}
+                              </div>
+                          ))}
+                      </div>
+                  </div>
+                  <div className="bg-white border border-zinc-300 p-4 shadow-sm text-xs">
+                      <div className="text-xs font-bold uppercase text-zinc-600 mb-2">地下城节点统计</div>
+                      <div className="text-[10px] text-zinc-600 mb-2">已记录节点: {dungeonNodes.length}</div>
+                      <div className="max-h-64 overflow-auto space-y-2">
+                          {dungeonNodes.slice(0, 40).map((node: any) => (
+                              <div key={node.id} className="border border-zinc-200 p-2">
+                                  <div className="font-bold text-black">{node.name}</div>
+                                  <div className="text-[10px] text-zinc-500">楼层: {node.floor}</div>
+                                  <div className="text-[10px] text-zinc-500">坐标: {node.coordinates?.x}, {node.coordinates?.y}</div>
+                              </div>
+                          ))}
+                          {dungeonNodes.length > 40 && <div className="text-[10px] text-zinc-500">… 还有 {dungeonNodes.length - 40} 条</div>}
+                      </div>
+                  </div>
               </div>
-              <div className="bg-white border border-zinc-300 p-4 shadow-sm">
-                  <div className="text-xs font-bold uppercase text-zinc-600 mb-2">地下城结构</div>
-                  <pre className="text-[10px] text-zinc-800 font-mono bg-zinc-50 border border-zinc-200 p-3 max-h-80 overflow-auto whitespace-pre-wrap">
-                      {JSON.stringify(dungeonStructure, null, 2)}
-                  </pre>
               </div>
-              <div className="bg-white border border-zinc-300 p-4 shadow-sm">
-                  <div className="text-xs font-bold uppercase text-zinc-600 mb-2">地下城节点数据 (1-50层)</div>
-                  <pre className="text-[10px] text-zinc-800 font-mono bg-zinc-50 border border-zinc-200 p-3 max-h-96 overflow-auto whitespace-pre-wrap">
-                      {JSON.stringify(dungeonNodes, null, 2)}
-                  </pre>
-              </div>
-              <div className="bg-white border border-zinc-300 p-4 shadow-sm">
-                  <div className="text-xs font-bold uppercase text-zinc-600 mb-2">宏观/中观地点索引</div>
-                  <pre className="text-[10px] text-zinc-800 font-mono bg-zinc-50 border border-zinc-200 p-3 max-h-80 overflow-auto whitespace-pre-wrap">
-                      {JSON.stringify({ macro, mid }, null, 2)}
-                  </pre>
-              </div>
+              )}
           </div>
       );
   };

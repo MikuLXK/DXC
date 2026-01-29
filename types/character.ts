@@ -143,6 +143,13 @@ export interface CharacterStats {
     敏捷: number;
     魔力: number;
   };
+  隐藏基础能力?: {
+    力量: number;
+    耐久: number;
+    灵巧: number;
+    敏捷: number;
+    魔力: number;
+  };
   
   发展能力: FalnaAbility[];
   技能: Skill[];

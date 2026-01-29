@@ -5,13 +5,14 @@ import { GeoPoint } from '../../types';
 interface MobileTopNavProps {
     time: string;
     location: string;
+    locationHierarchy?: { macro?: string; mid?: string; small?: string };
     weather: string;
     floor: number;
     coords?: GeoPoint;
     isHellMode?: boolean;
 }
 
-export const MobileTopNav: React.FC<MobileTopNavProps> = ({ time, location, weather, floor, coords, isHellMode }) => {
+export const MobileTopNav: React.FC<MobileTopNavProps> = ({ time, location, locationHierarchy, weather, floor, coords, isHellMode }) => {
     const [isFullscreen, setIsFullscreen] = useState(false);
 
     const toggleFullscreen = () => {
@@ -49,6 +50,8 @@ export const MobileTopNav: React.FC<MobileTopNavProps> = ({ time, location, weat
     }
 
     const coordsString = coords ? `X:${Math.round(coords.x)} Y:${Math.round(coords.y)}` : "X:0 Y:0";
+    const locationPath = [locationHierarchy?.macro, locationHierarchy?.mid, locationHierarchy?.small].filter(Boolean).join(' > ');
+    const mainLocation = locationHierarchy?.small || locationHierarchy?.mid || locationHierarchy?.macro || location;
 
     // Theme Constants
     const borderColor = isHellMode ? 'border-red-600' : 'border-blue-600';
@@ -78,7 +81,7 @@ export const MobileTopNav: React.FC<MobileTopNavProps> = ({ time, location, weat
                 <div className="flex items-center gap-1">
                     <MapPin size={10} className={iconColor} />
                     <span className={`text-sm font-display font-bold uppercase tracking-wide text-white truncate max-w-[120px]`}>
-                        {location}
+                        {mainLocation}
                     </span>
                 </div>
                 <div className="flex items-center gap-2 text-[9px] font-mono text-zinc-500">
@@ -86,6 +89,11 @@ export const MobileTopNav: React.FC<MobileTopNavProps> = ({ time, location, weat
                     <span className="text-zinc-700">|</span>
                     <span>{floor > 0 ? `B${floor}F` : 'SURFACE'}</span>
                 </div>
+                {locationPath && (
+                    <div className="text-[8px] font-mono text-zinc-600 max-w-[160px] truncate">
+                        {locationPath}
+                    </div>
+                )}
             </div>
 
             {/* Right: Weather & Fullscreen */}

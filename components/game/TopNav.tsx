@@ -6,13 +6,14 @@ import { GeoPoint } from '../../types';
 interface TopNavProps {
   time: string;
   location: string;
+  locationHierarchy?: { macro?: string; mid?: string; small?: string };
   floor: number;
   weather: string;
   coords: GeoPoint;
   isHellMode?: boolean;
 }
 
-export const TopNav: React.FC<TopNavProps> = ({ time, location, floor, weather, coords, isHellMode }) => {
+export const TopNav: React.FC<TopNavProps> = ({ time, location, locationHierarchy, floor, weather, coords, isHellMode }) => {
   const [isFullscreen, setIsFullscreen] = useState(false);
 
   const toggleFullscreen = () => {
@@ -54,6 +55,8 @@ export const TopNav: React.FC<TopNavProps> = ({ time, location, floor, weather, 
   }
 
   const coordsString = `X:${Math.round(coords.x)} Y:${Math.round(coords.y)}`;
+  const locationPath = [locationHierarchy?.macro, locationHierarchy?.mid, locationHierarchy?.small].filter(Boolean).join(' > ');
+  const mainLocation = locationHierarchy?.small || locationHierarchy?.mid || locationHierarchy?.macro || location;
 
   // Theme Constants
   const borderColor = isHellMode ? 'border-red-600' : 'border-blue-600';
@@ -92,13 +95,18 @@ export const TopNav: React.FC<TopNavProps> = ({ time, location, floor, weather, 
             <div className="flex flex-col items-center justify-center drop-shadow-md">
                  <div className={`flex items-center gap-2 ${textColor} mb-1`}>
                      <MapPin size={24} className="animate-bounce" />
-                     <span className={`text-3xl font-display uppercase italic tracking-wider text-white ${textStrokeClass}`}>{location}</span>
+                     <span className={`text-3xl font-display uppercase italic tracking-wider text-white ${textStrokeClass}`}>{mainLocation}</span>
                  </div>
                  <div className="flex items-center gap-4 text-xs font-mono text-zinc-400 bg-black/80 px-3 py-1 rounded-sm border border-zinc-700">
                     <span className="flex items-center gap-1"><Grid size={12}/> {coordsString}</span>
                     <span className={textColor}>|</span>
                     <span className="flex items-center gap-1 text-white"><Layers size={12}/> {floor > 0 ? `B${floor}F` : 'SURFACE'}</span>
                  </div>
+                 {locationPath && (
+                     <div className="mt-1 text-[10px] font-mono text-zinc-500 bg-black/60 px-2 py-0.5 border border-zinc-800">
+                         {locationPath}
+                     </div>
+                 )}
             </div>
 
             {/* Right: Weather & Fullscreen */}

@@ -1,4 +1,4 @@
-import { WorldMapData, Confidant, GeoPoint } from "../types";
+﻿import { WorldMapData, Confidant, GeoPoint } from "../types";
 
 export interface MapDrawOptions {
     floor: number;
@@ -120,7 +120,7 @@ export const drawWorldMapCanvas = (
         const path = new Path2D(route.path);
         ctx.save();
         ctx.strokeStyle = route.color;
-        ctx.lineWidth = route.width;
+        ctx.lineWidth = Math.max(1, route.width * sizeFactor);
         ctx.lineCap = 'round';
         ctx.lineJoin = 'round';
         if (route.type === 'ALLEY') {
@@ -215,5 +215,19 @@ export const drawWorldMapCanvas = (
         ctx.stroke();
         ctx.setLineDash([]);
         ctx.restore();
+
+        if (showLabels) {
+            ctx.save();
+            ctx.fillStyle = "#e2e8f0";
+            ctx.font = `${Math.max(12, 90 * sizeFactor)}px sans-serif`;
+            ctx.textAlign = "center";
+            ctx.textBaseline = "bottom";
+            ctx.fillText("玩家", currentPos.x, currentPos.y - 90 * sizeFactor);
+            ctx.font = `${Math.max(10, 70 * sizeFactor)}px monospace`;
+            ctx.fillText(`${Math.round(currentPos.x)}, ${Math.round(currentPos.y)}`, currentPos.x, currentPos.y - 40 * sizeFactor);
+            ctx.restore();
+        }
     }
 };
+
+

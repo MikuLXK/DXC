@@ -67,6 +67,7 @@
             "生存状态": { "饱腹度": "Number", "最大饱腹度": "Number", "水分": "Number", "最大水分": "Number" },
             "身体部位": { "头部": "{当前/最大}", "胸部": "{当前/最大}", "腹部": "{当前/最大}", "左臂": "{当前/最大}", "右臂": "{当前/最大}", "左腿": "{当前/最大}", "右腿": "{当前/最大}" },
             "能力值": { "力量": "Number", "耐久": "Number", "灵巧": "Number", "敏捷": "Number", "魔力": "Number" },
+            "隐藏基础能力": { "力量": "Number", "耐久": "Number", "灵巧": "Number", "敏捷": "Number", "魔力": "Number" },
             "经验值": "Number",
             "伟业": "Number",
             "升级所需伟业": "Number",
@@ -235,8 +236,8 @@
             "routes": "Array<{id, name, path, type, width, color, floor}>",
             "surfaceLocations": "Array<{id, name, type, coordinates, radius, description, icon, floor}>",
             "dungeonStructure": "Array<{floorStart, floorEnd, name, description, dangerLevel, landmarks}>",
-            "macroLocations": "Array<{id, name, type?, coordinates, area, description?, floor?}>",
-            "midLocations": "Array<{id, name, parentId, coordinates, area?, description?, floor?}>",
+            "macroLocations": "Array<{id, name, type?, coordinates, area, size?, buildings?, layout?, description?, floor?}>",
+            "midLocations": "Array<{id, name, parentId, coordinates, area?, size?, buildings?, layout?, description?, floor?}>",
             "smallLocations": "Array<{id, name, parentId, coordinates?, area?, description?, floor?, layout}>"
         }
     },

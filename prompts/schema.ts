@@ -58,6 +58,12 @@
 - \`gameState.角色.能力值.灵巧\` (DEX)
 - \`gameState.角色.能力值.敏捷\` (AGI)
 - \`gameState.角色.能力值.魔力\` (MAG)
+**隐藏基础能力 (Hidden Base)**
+- \`gameState.角色.隐藏基础能力.力量\`
+- \`gameState.角色.隐藏基础能力.耐久\`
+- \`gameState.角色.隐藏基础能力.灵巧\`
+- \`gameState.角色.隐藏基础能力.敏捷\`
+- \`gameState.角色.隐藏基础能力.魔力\`
 
 **资源与成长**
 - \`gameState.角色.经验值\`: Number (Excelia)
@@ -218,8 +224,8 @@
 - \`gameState.地图.routes\`: Array<{ "id", "name", "path", "type", "width", "color", "floor" }>
 - \`gameState.地图.surfaceLocations\`: Array<{ "id", "name", "type", "coordinates", "radius", "description", "icon", "floor" }>
 - \`gameState.地图.dungeonStructure\`: Array<{ "floorStart", "floorEnd", "name", "description", "dangerLevel", "landmarks" }>
-- \`gameState.地图.macroLocations\`: Array<{ "id", "name", "type?", "coordinates", "area": { "shape", "center?", "radius?", "width?", "height?", "points?", "note?" }, "description?", "floor?" }>
-- \`gameState.地图.midLocations\`: Array<{ "id", "name", "parentId", "coordinates", "area?", "description?", "floor?" }>
+- \`gameState.地图.macroLocations\`: Array<{ "id", "name", "type?", "coordinates", "area": { "shape", "center?", "radius?", "width?", "height?", "points?", "note?" }, "size?", "buildings?", "layout?", "description?", "floor?" }>
+- \`gameState.地图.midLocations\`: Array<{ "id", "name", "parentId", "coordinates", "area?", "size?", "buildings?", "layout?", "description?", "floor?" }>
 - \`gameState.地图.smallLocations\`: Array<{ "id", "name", "parentId", "coordinates?", "area?", "description?", "floor?", "layout" }>
   - \`layout\`: { "scale", "width", "height", "rooms", "furniture", "entrances", "paths?", "notes?" }
 

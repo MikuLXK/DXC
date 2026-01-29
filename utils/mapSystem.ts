@@ -348,6 +348,37 @@ export const generateDanMachiMap = (): WorldMapData => {
             type: 'CITY',
             coordinates: { x: CENTER_X, y: CENTER_Y },
             area: { shape: 'CIRCLE', center: { x: CENTER_X, y: CENTER_Y }, radius: CITY_RADIUS, note: '城墙范围' },
+            size: { width: 4000, height: 4000, unit: 'm' },
+            buildings: [
+                { id: 'b_babel', name: '巴别塔', type: 'LANDMARK', floors: 50, description: '地下城入口与神明居所。' },
+                { id: 'b_guild', name: '公会本部', type: 'GUILD', floors: 5, description: '登记、委托、情报与公会运营中心。' },
+                { id: 'b_tavern', name: '丰饶的女主人', type: 'SHOP', floors: 2, description: '著名酒馆与情报据点。' }
+            ],
+            layout: {
+                scale: '1格=20米',
+                width: 200,
+                height: 200,
+                rooms: [
+                    { id: 'district_n', name: '北大街', type: 'district', bounds: { x: 60, y: 10, width: 80, height: 50 } },
+                    { id: 'district_ne', name: '东北大街', type: 'district', bounds: { x: 140, y: 20, width: 50, height: 60 } },
+                    { id: 'district_e', name: '东大街', type: 'district', bounds: { x: 150, y: 80, width: 40, height: 60 } },
+                    { id: 'district_se', name: '东南大街', type: 'district', bounds: { x: 120, y: 140, width: 60, height: 50 } },
+                    { id: 'district_s', name: '南大街', type: 'district', bounds: { x: 70, y: 150, width: 60, height: 40 } },
+                    { id: 'district_sw', name: '西南大街', type: 'district', bounds: { x: 20, y: 130, width: 60, height: 60 } },
+                    { id: 'district_w', name: '西大街', type: 'district', bounds: { x: 10, y: 80, width: 50, height: 50 } },
+                    { id: 'district_nw', name: '西北大街', type: 'district', bounds: { x: 20, y: 20, width: 60, height: 60 } },
+                    { id: 'center_plaza', name: '中央广场', type: 'plaza', bounds: { x: 80, y: 80, width: 40, height: 40 } }
+                ],
+                furniture: [
+                    { id: 'f_babel', name: '巴别塔', type: 'landmark', position: { x: 100, y: 100 }, size: { width: 6, height: 6 } },
+                    { id: 'f_guild', name: '公会本部', type: 'building', position: { x: 55, y: 45 }, size: { width: 6, height: 4 } },
+                    { id: 'f_tavern', name: '丰饶的女主人', type: 'building', position: { x: 25, y: 95 }, size: { width: 5, height: 3 } }
+                ],
+                entrances: [
+                    { id: 'entrance_gate', name: '都市正门', position: { x: 100, y: 190 }, connectsTo: '外部道路' }
+                ],
+                notes: ['中央广场与巴别塔为城市核心。', '各大街区呈放射分布，外围为城墙。']
+            },
             description: '迷宫都市欧拉丽。',
             floor: 0
         }
@@ -360,6 +391,34 @@ export const generateDanMachiMap = (): WorldMapData => {
             parentId: 'macro_orario',
             coordinates: { x: CENTER_X - S(6000), y: CENTER_Y - S(6000) },
             area: { shape: 'CIRCLE', center: { x: CENTER_X - S(6000), y: CENTER_Y - S(6000) }, radius: S(1000) },
+            size: { width: 120, height: 90, unit: 'm' },
+            buildings: [
+                { id: 'guild_floor1', name: '一层大厅', floors: 1, description: '登记、委托、公告板。' },
+                { id: 'guild_floor2', name: '二层事务区', floors: 1, description: '公会办公与档案管理。' },
+                { id: 'guild_floor3', name: '三层会议区', floors: 1, description: '会议室与重要访客接待。' }
+            ],
+            layout: {
+                scale: '1格=1米',
+                width: 60,
+                height: 45,
+                rooms: [
+                    { id: 'guild_lobby', name: '一层大厅', type: 'public', bounds: { x: 0, y: 0, width: 60, height: 20 } },
+                    { id: 'guild_counter', name: '委托柜台', type: 'service', bounds: { x: 0, y: 20, width: 35, height: 8 } },
+                    { id: 'guild_board', name: '公告板区', type: 'info', bounds: { x: 35, y: 20, width: 25, height: 8 } },
+                    { id: 'guild_office', name: '办公区', type: 'office', bounds: { x: 0, y: 28, width: 40, height: 10 } },
+                    { id: 'guild_meet', name: '会议区', type: 'meeting', bounds: { x: 40, y: 28, width: 20, height: 10 } },
+                    { id: 'guild_stairs', name: '楼梯间', type: 'stairs', bounds: { x: 0, y: 38, width: 10, height: 7 } }
+                ],
+                furniture: [
+                    { id: 'guild_notice', name: '公告板', type: 'board', position: { x: 42, y: 22 }, size: { width: 6, height: 3 } },
+                    { id: 'guild_counter', name: '柜台', type: 'counter', position: { x: 10, y: 22 }, size: { width: 10, height: 2 } },
+                    { id: 'guild_table', name: '情报桌', type: 'table', position: { x: 20, y: 8 }, size: { width: 4, height: 2 } }
+                ],
+                entrances: [
+                    { id: 'guild_entry', name: '正门', position: { x: 30, y: 0 }, connectsTo: '欧拉丽西北大街' }
+                ],
+                notes: ['大厅人流密集，公告板区域常有冒险者驻足。']
+            },
             description: '冒险者登记与委托中心。',
             floor: 0
         },
@@ -369,6 +428,30 @@ export const generateDanMachiMap = (): WorldMapData => {
             parentId: 'macro_orario',
             coordinates: { x: CENTER_X - S(9000), y: CENTER_Y },
             area: { shape: 'CIRCLE', center: { x: CENTER_X - S(9000), y: CENTER_Y }, radius: S(600) },
+            size: { width: 70, height: 50, unit: 'm' },
+            buildings: [
+                { id: 'tavern_floor1', name: '一层酒馆', floors: 1, description: '用餐区与吧台。' },
+                { id: 'tavern_floor2', name: '二层客房', floors: 1, description: '客房与员工休息区。' }
+            ],
+            layout: {
+                scale: '1格=1米',
+                width: 40,
+                height: 28,
+                rooms: [
+                    { id: 'tavern_hall', name: '酒馆大厅', type: 'public', bounds: { x: 0, y: 0, width: 40, height: 16 } },
+                    { id: 'tavern_bar', name: '吧台区', type: 'service', bounds: { x: 0, y: 16, width: 22, height: 6 } },
+                    { id: 'tavern_kitchen', name: '后厨', type: 'service', bounds: { x: 22, y: 16, width: 18, height: 6 } },
+                    { id: 'tavern_stairs', name: '楼梯间', type: 'stairs', bounds: { x: 0, y: 22, width: 10, height: 6 } }
+                ],
+                furniture: [
+                    { id: 'tavern_tables', name: '餐桌区', type: 'table', position: { x: 10, y: 6 }, size: { width: 8, height: 4 } },
+                    { id: 'tavern_bar', name: '吧台', type: 'counter', position: { x: 4, y: 18 }, size: { width: 10, height: 2 } }
+                ],
+                entrances: [
+                    { id: 'tavern_entry', name: '正门', position: { x: 20, y: 0 }, connectsTo: '欧拉丽西大街' }
+                ],
+                notes: ['酒馆大厅常用于情报交流。']
+            },
             description: '西大街知名酒馆。',
             floor: 0
         }
@@ -525,6 +608,31 @@ export const generateDanMachiMap = (): WorldMapData => {
         macroLocations,
         midLocations,
         smallLocations
+    };
+};
+
+export const resolveLocationHierarchy = (mapData: WorldMapData | undefined, locationName?: string): { macro?: string; mid?: string; small?: string } => {
+    if (!mapData || !locationName) return {};
+    const macroLocations = Array.isArray(mapData.macroLocations) ? mapData.macroLocations : [];
+    const midLocations = Array.isArray(mapData.midLocations) ? mapData.midLocations : [];
+    const smallLocations = Array.isArray(mapData.smallLocations) ? mapData.smallLocations : [];
+    const normalize = (value?: string) => (value || '').toString().trim().toLowerCase().replace(/\s+/g, '');
+    const matchByName = (name: string, list: { id: string; name: string }[]) => {
+        const n = normalize(name);
+        if (!n) return null;
+        return list.find(i => normalize(i.name) === n) || list.find(i => n.includes(normalize(i.name))) || null;
+    };
+    const currentSmall = matchByName(locationName, smallLocations as any);
+    const currentMid = currentSmall
+        ? midLocations.find(m => m.id === (currentSmall as any).parentId) || null
+        : matchByName(locationName, midLocations as any);
+    const currentMacro = currentMid
+        ? macroLocations.find(m => m.id === (currentMid as any).parentId) || null
+        : (macroLocations.length === 1 ? macroLocations[0] : matchByName(locationName, macroLocations as any));
+    return {
+        macro: currentMacro?.name,
+        mid: currentMid?.name,
+        small: currentSmall?.name
     };
 };
 

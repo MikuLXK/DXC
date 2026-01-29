@@ -23,6 +23,9 @@ export interface MapMacroLocation {
   type?: string;
   coordinates: GeoPoint;
   area: MapArea;
+  size?: { width: number; height: number; unit?: string };
+  buildings?: MapBuilding[];
+  layout?: MapSmallLayout;
   description?: string;
   floor?: number;
 }
@@ -33,6 +36,9 @@ export interface MapMidLocation {
   parentId: string;
   coordinates: GeoPoint;
   area?: MapArea;
+  size?: { width: number; height: number; unit?: string };
+  buildings?: MapBuilding[];
+  layout?: MapSmallLayout;
   description?: string;
   floor?: number;
 }
@@ -71,6 +77,16 @@ export interface MapSmallLayout {
   furniture: MapFurniture[];
   entrances: MapEntrance[];
   paths?: { id: string; from: string; to: string; note?: string }[];
+  notes?: string[];
+}
+
+export interface MapBuilding {
+  id: string;
+  name: string;
+  type?: string;
+  floors?: number;
+  size?: { width: number; height: number; unit?: string };
+  description?: string;
   notes?: string[];
 }
 

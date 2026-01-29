@@ -408,7 +408,7 @@ export const constructMapContext = (gameState: GameState, params: any): string =
         );
     };
 
-    if (floor === 0 && (macroLocations.length > 0 || midLocations.length > 0 || smallLocations.length > 0)) {
+    if (macroLocations.length > 0 || midLocations.length > 0 || smallLocations.length > 0) {
         const currentLocationName = gameState.当前地点 || '';
         const currentSmall = matchByName(currentLocationName, smallLocations as any) as any;
         const currentMid = currentSmall
@@ -425,7 +425,9 @@ export const constructMapContext = (gameState: GameState, params: any): string =
             name: m.name,
             type: m.type,
             coordinates: m.coordinates,
-            area: m.area
+            description: m.description,
+            size: m.size ?? (m.area?.radius ? { width: m.area.radius * 2, height: m.area.radius * 2, unit: 'm' } : undefined),
+            buildings: m.buildings || []
         }));
         const midSummary = midLocations
             .filter(m => !currentMacro || m.parentId === currentMacro.id)
@@ -433,26 +435,31 @@ export const constructMapContext = (gameState: GameState, params: any): string =
                 id: m.id,
                 name: m.name,
                 coordinates: m.coordinates,
-                parentId: m.parentId
+                parentId: m.parentId,
+                description: m.description,
+                size: m.size ?? (m.area?.radius ? { width: m.area.radius * 2, height: m.area.radius * 2, unit: 'm' } : undefined),
+                buildings: m.buildings || []
             }));
 
-        output += `【大地点】\n${JSON.stringify(macroSummary, null, 2)}\n`;
-        output += `【中地点】\n${JSON.stringify(midSummary, null, 2)}\n`;
-        if (currentSmall) {
-            const smallPayload = {
-                id: currentSmall.id,
-                name: currentSmall.name,
-                parentId: currentSmall.parentId,
-                coordinates: currentSmall.coordinates,
-                area: currentSmall.area,
-                description: currentSmall.description,
-                layout: currentSmall.layout
-            };
-            output += `【小地点-当前】\n${JSON.stringify(smallPayload, null, 2)}\n`;
-        } else {
-            output += `【小地点-当前】\n（未进入小地点内部，完整结构不载入）\n`;
+        output += `【大地点(常驻)】\n${JSON.stringify(macroSummary, null, 2)}\n`;
+        output += `【中地点(常驻)】\n${JSON.stringify(midSummary, null, 2)}\n`;
+        if (floor === 0) {
+            if (currentSmall) {
+                const smallPayload = {
+                    id: currentSmall.id,
+                    name: currentSmall.name,
+                    parentId: currentSmall.parentId,
+                    coordinates: currentSmall.coordinates,
+                    area: currentSmall.area,
+                    description: currentSmall.description,
+                    layout: currentSmall.layout
+                };
+                output += `【小地点-当前】\n${JSON.stringify(smallPayload, null, 2)}\n`;
+            } else {
+                output += `【小地点-当前】\n（未进入小地点内部，完整结构不载入）\n`;
+            }
+            return output.trimEnd();
         }
-        return output.trimEnd();
     }
 
     const surfaceLocations = Array.isArray(mapData.surfaceLocations) ? mapData.surfaceLocations : [];

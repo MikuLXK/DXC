@@ -2,7 +2,7 @@
 import { useState, useEffect, useRef } from 'react';
 import { GameState, AppSettings, LogEntry, InventoryItem, TavernCommand, ActionOption, PhoneMessage, PhoneThread, PhonePendingMessage, Confidant, MemorySystem, MemoryEntry, SaveSlot, Task, ContextModuleConfig, PhonePost, PhoneAIResponse } from '../types';
 import { createNewGameState } from '../utils/dataMapper';
-import { computeMaxCarry } from '../utils/characterMath';
+import { computeMaxCarry, computeMaxHp, computeMaxMind, computeMaxStamina } from '../utils/characterMath';
 import { generateDungeonMasterResponse, generatePhoneResponse, generateWorldInfoResponse, DEFAULT_PROMPT_MODULES, DEFAULT_MEMORY_CONFIG, dispatchAIRequest, generateMemorySummary, extractThinkingBlocks, parseAIResponseText, mergeThinkingSegments, resolveServiceConfig } from '../utils/ai';
 import { P_MEM_S2M, P_MEM_M2L } from '../prompts';
 import { Difficulty } from '../types/enums';
@@ -181,15 +181,92 @@ const migrateNpcActionsToTracking = (state: GameState): GameState => {
 
 const ensureDerivedStats = (state: GameState): GameState => {
     if (!state?.角色) return state;
+    const baseAbilities = state.角色.隐藏基础能力 || { 力量: 0, 耐久: 0, 灵巧: 0, 敏捷: 0, 魔力: 0 };
     const maxCarry = computeMaxCarry(state.角色);
-    if (state.角色.最大负重 === maxCarry) return state;
+    const maxHp = computeMaxHp(state.角色);
+    const maxMind = computeMaxMind(state.角色);
+    const maxStamina = computeMaxStamina(state.角色);
+    const nextMap = state.地图 ? {
+        ...state.地图,
+        macroLocations: Array.isArray(state.地图.macroLocations) ? state.地图.macroLocations : [],
+        midLocations: Array.isArray(state.地图.midLocations) ? state.地图.midLocations : [],
+        smallLocations: Array.isArray(state.地图.smallLocations) ? state.地图.smallLocations : [],
+        surfaceLocations: Array.isArray(state.地图.surfaceLocations) ? state.地图.surfaceLocations : [],
+        dungeonStructure: Array.isArray(state.地图.dungeonStructure) ? state.地图.dungeonStructure : []
+    } : state.地图;
+    const hasBodyParts = !!state.角色.身体部位;
+    let nextBodyParts = state.角色.身体部位;
+    if (hasBodyParts) {
+        const cap = (value: number) => Math.max(1, Math.round(value));
+        const mkPart = (ratio: number, current?: number) => {
+            const max = cap(maxHp * ratio);
+            return { 当前: Math.min(current ?? max, max), 最大: max };
+        };
+        const b = state.角色.身体部位!;
+        nextBodyParts = {
+            头部: mkPart(0.15, b.头部?.当前),
+            胸部: mkPart(0.30, b.胸部?.当前),
+            腹部: mkPart(0.15, b.腹部?.当前),
+            左臂: mkPart(0.10, b.左臂?.当前),
+            右臂: mkPart(0.10, b.右臂?.当前),
+            左腿: mkPart(0.10, b.左腿?.当前),
+            右腿: mkPart(0.10, b.右腿?.当前)
+        };
+    }
+    const nextCurrentHp = hasBodyParts
+        ? Object.values(nextBodyParts || {}).reduce((sum: number, p: any) => sum + (p?.当前 || 0), 0)
+        : Math.min(state.角色.生命值 || maxHp, maxHp);
     return {
         ...state,
         角色: {
             ...state.角色,
-            最大负重: maxCarry
-        }
+            最大负重: maxCarry,
+            隐藏基础能力: baseAbilities,
+            最大生命值: maxHp,
+            生命值: nextCurrentHp,
+            最大精神力: maxMind,
+            精神力: Math.min(state.角色.精神力 ?? maxMind, maxMind),
+            最大体力: maxStamina,
+            体力: Math.min(state.角色.体力 ?? maxStamina, maxStamina),
+            身体部位: nextBodyParts
+        },
+        地图: nextMap
     };
+};
+
+type DurabilityAction = 'attack' | 'skill' | 'magic' | 'guard';
+
+const classifyDurabilityAction = (input: string): DurabilityAction | null => {
+    const text = input || '';
+    if (text.includes('发动魔法') || text.includes('施放') || text.includes('吟唱')) return 'magic';
+    if (text.includes('发动技能') || text.includes('使用技能')) return 'skill';
+    if (text.includes('防御姿态') || text.includes('防御') || text.includes('格挡')) return 'guard';
+    if (text.includes('攻击') || text.includes('发起攻击') || text.includes('挥砍')) return 'attack';
+    return null;
+};
+
+const applyDurabilityWear = (state: GameState, action: DurabilityAction): GameState => {
+    const inventory = Array.isArray(state.背包) ? state.背包 : [];
+    if (inventory.length === 0) return state;
+
+    const equip = state.角色?.装备 || {};
+    const weaponTargets = [equip.主手, equip.副手].filter((v: string) => v && v.trim());
+    const armorTargets = [equip.头部, equip.身体, equip.手部, equip.腿部, equip.足部].filter((v: string) => v && v.trim());
+
+    const amount = action === 'skill' ? 2 : 1;
+    const targets = action === 'guard' ? armorTargets : weaponTargets;
+    if (targets.length === 0) return state;
+
+    const nextInventory = inventory.map(item => {
+        if (!item || typeof item.名称 !== 'string') return item;
+        if (!targets.includes(item.名称)) return item;
+        if (typeof item.耐久 !== 'number' || item.耐久 <= 0) return item;
+        const nextDurability = Math.max(0, item.耐久 - amount);
+        const nextQuality = nextDurability === 0 ? 'Broken' : item.品质;
+        return { ...item, 耐久: nextDurability, 品质: nextQuality };
+    });
+
+    return { ...state, 背包: nextInventory };
 };
 
 export const useGameLogic = (initialState?: GameState, onExitCb?: () => void) => {
@@ -946,7 +1023,10 @@ export const useGameLogic = (initialState?: GameState, onExitCb?: () => void) =>
 
                 const responseId = generateLegacyId();
                 const responseSnapshot = JSON.stringify(createStorageSnapshot(stateWithUserLog));
-                const commands = Array.isArray(aiResponse.tavern_commands) ? aiResponse.tavern_commands : [];
+                const rawCommands = Array.isArray(aiResponse.tavern_commands) ? aiResponse.tavern_commands : [];
+                const commands = aiResponse.phone_sync_plan
+                    ? rawCommands.filter(cmd => !(typeof cmd?.key === 'string' && cmd.key.startsWith('gameState.手机')))
+                    : rawCommands;
                 let logs = Array.isArray(aiResponse.logs) ? aiResponse.logs : [];
                 const narrative = aiResponse.narrative || "";
                 
@@ -954,7 +1034,11 @@ export const useGameLogic = (initialState?: GameState, onExitCb?: () => void) =>
                     logs = [{ sender: "system", text: `(数据解析异常，原始响应):\n${aiResponse.rawResponse}` }];
                 }
 
-                const { newState } = processTavernCommands(prev, commands);
+                let { newState } = processTavernCommands(prev, commands);
+                const wearAction = contextType === 'ACTION' ? classifyDurabilityAction(input) : null;
+                if (wearAction) {
+                    newState = applyDurabilityWear(newState, wearAction);
+                }
                 const newLogs: LogEntry[] = [];
                 const aiLogGameTime = newState.游戏时间;
 
@@ -1606,7 +1690,10 @@ export const useGameLogic = (initialState?: GameState, onExitCb?: () => void) =>
             );
             let nextStateForPhoneSync: GameState | null = null;
             setGameState(prev => {
-                const commands = Array.isArray(aiResponse.tavern_commands) ? aiResponse.tavern_commands : [];
+                const rawCommands = Array.isArray(aiResponse.tavern_commands) ? aiResponse.tavern_commands : [];
+                const commands = aiResponse.phone_sync_plan
+                    ? rawCommands.filter(cmd => !(typeof cmd?.key === 'string' && cmd.key.startsWith('gameState.手机')))
+                    : rawCommands;
                 const { newState } = processTavernCommands(prev, commands);
                 newState.处理中 = false;
                 nextStateForPhoneSync = newState;
@@ -1731,7 +1818,10 @@ export const useGameLogic = (initialState?: GameState, onExitCb?: () => void) =>
         turnIndex: number,
         logsForResponse: LogEntry[]
     ) => {
-        const commands = Array.isArray(response?.tavern_commands) ? response.tavern_commands : [];
+        const rawCommands = Array.isArray(response?.tavern_commands) ? response.tavern_commands : [];
+        const commands = (response as any)?.phone_sync_plan
+            ? rawCommands.filter(cmd => !(typeof cmd?.key === 'string' && cmd.key.startsWith('gameState.手机')))
+            : rawCommands;
         const { newState } = processTavernCommands(state, commands);
         const aiLogGameTime = newState.游戏时间;
 
